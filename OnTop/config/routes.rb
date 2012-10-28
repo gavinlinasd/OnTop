@@ -1,4 +1,14 @@
 OnTop::Application.routes.draw do
+
+  # For search controller
+
+  match 'search/' => 'search#show'
+  match 'search/index' => 'search#index'
+  match 'search/show' => 'search#show'
+
+#  get "search/index"
+#  get "search/show"
+
   # The priority is based upon order of creation:
   # first created -> highest priority.
 
