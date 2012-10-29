@@ -11,7 +11,14 @@
 #
 # It's strongly recommended to check this file into your version control system.
 
-ActiveRecord::Schema.define(:version => 20121028201230) do
+ActiveRecord::Schema.define(:version => 20121029020428) do
+
+  create_table "friendships", :force => true do |t|
+    t.integer  "keyword_id"
+    t.integer  "friend_id"
+    t.datetime "created_at", :null => false
+    t.datetime "updated_at", :null => false
+  end
 
   create_table "keywords", :force => true do |t|
     t.string   "name"
@@ -23,6 +30,13 @@ ActiveRecord::Schema.define(:version => 20121028201230) do
   create_table "keywords_webpages", :id => false, :force => true do |t|
     t.integer "keyword_id"
     t.integer "webpage_id"
+  end
+
+  create_table "relationships", :force => true do |t|
+    t.integer  "parent_id"
+    t.integer  "child_id"
+    t.datetime "created_at", :null => false
+    t.datetime "updated_at", :null => false
   end
 
   create_table "webpages", :force => true do |t|
