@@ -5,8 +5,12 @@ class Keyword < ActiveRecord::Base
 
   has_and_belongs_to_many :webpages
 
-  has_many :friendships, :foreign_key => "keyword_id", :class_name => "Friendship"
-  has_many :friends, :through => :friendships
+  has_many :friendships, 
+           :foreign_key => "keyword_id", 
+           :class_name => "Friendship",
+           :dependent => :destroy
+  has_many :friends, 
+           :through => :friendships
 
   def befriend(keyword)
     # TODO: put in check that association does not exist
