@@ -5,6 +5,7 @@ OnTop::Application.routes.draw do
   match 'search/' => 'search#show'
   match 'search/index' => 'search#index'
   match 'search/show' => 'search#show'
+  match 'search/fetch' => 'search#fetch_by_keyword'
 
 #  get "search/index"
 #  get "search/show"
