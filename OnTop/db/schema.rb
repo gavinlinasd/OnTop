@@ -32,13 +32,6 @@ ActiveRecord::Schema.define(:version => 20121029020428) do
     t.integer "webpage_id"
   end
 
-  create_table "relationships", :force => true do |t|
-    t.integer  "parent_id"
-    t.integer  "child_id"
-    t.datetime "created_at", :null => false
-    t.datetime "updated_at", :null => false
-  end
-
   create_table "webpages", :force => true do |t|
     t.string   "url"
     t.datetime "created_at", :null => false
