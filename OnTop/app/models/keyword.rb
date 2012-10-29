@@ -18,4 +18,7 @@ class Keyword < ActiveRecord::Base
   has_many :children,
            :through     => :child_parent_relationships,
            :source      => :child
+
+  has_many :friendships
+  has_many :friends, :through => :friendships
 end
