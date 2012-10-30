@@ -11,13 +11,14 @@
 #
 # It's strongly recommended to check this file into your version control system.
 
-ActiveRecord::Schema.define(:version => 20121029020428) do
+ActiveRecord::Schema.define(:version => 20121030012414) do
 
   create_table "friendships", :force => true do |t|
     t.integer  "keyword_id"
     t.integer  "friend_id"
     t.datetime "created_at", :null => false
     t.datetime "updated_at", :null => false
+    t.decimal  "metric"
   end
 
   create_table "keywords", :force => true do |t|

@@ -28,6 +28,5 @@ key1 = Keyword.find_by_name("Bayes' Theorem")
 key2 = Keyword.find_by_name("Bayesian inference")
 key3 = Keyword.find_by_name("Law of total probability")
 
-key1.befriend(key2)
-key1.befriend(key3)
-key2.befriend(key3)
+key1.befriend(key2, 0.6)
+key1.befriend(key3, 0.2)

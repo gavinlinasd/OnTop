@@ -12,9 +12,12 @@ class Keyword < ActiveRecord::Base
   has_many :friends, 
            :through => :friendships
 
-  def befriend(keyword)
+  def befriend(keyword, value)
     # TODO: put in check that association does not exist
     self.friends << keyword
+    self.friendships.where(:friend_id => keyword.id).first.update_attributes(:metric => value)
+
     keyword.friends << self
+    keyword.friendships.where(:friend_id => self.id).first.update_attributes(:metric => value)
   end
 end

@@ -1,5 +1,5 @@
 class Friendship < ActiveRecord::Base
-  attr_accessible :friend_id, :keyword_id
+  attr_accessible :friend_id, :keyword_id, :metric
 
   # TODO: Need to ensure that when one keyword is deleted, both friendships are deleted
   belongs_to :keyword, :class_name => "Keyword", :foreign_key => "keyword_id"
