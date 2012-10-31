@@ -1,10 +1,13 @@
 OnTop::Application.routes.draw do
 
-  # For search controller
+  root :to => 'search#show'
 
+  # For search controller
   match 'search/' => 'search#show'
-  match 'search/index' => 'search#index'
   match 'search/show' => 'search#show'
+  # match 'search/index' => 'search#index'
+ 
+  # functional actions, will only turn in JSON form
   match 'search/fetch_key' => 'search#fetch_by_keyword'
   match 'search/fetch_page' => 'search#fetch_page_by_keyword'
 
