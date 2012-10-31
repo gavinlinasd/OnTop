@@ -1,10 +1,3 @@
-<% content_for :script do %>
-<%= javascript_include_tag "forcegraph", :debug =>true %>
-
-<% end %>
-
-<script>
-
 // globals
 // our graph or network
 var net;
@@ -24,19 +17,29 @@ $(document).ready(function () {
     disp.width = dispdiv.clientWidth;
     disp.height = dispdiv.clientHeight;
 
+    alert("<%= fetch_key_path %>");
+
     // default load for the page
-$.get("<%= fetch_key_path %>", {keyword: textbox.value}, function(data) {refresh(data); }, "json");
+    $.get("search#fetch_key", {keyword: textbox.value}, refresh(data), "json");
 
     alert("check2");
 
+     /*
     // handler function for refreshing the page
-    $("#submit").click( function () {
-       $.get("<%= fetch_key_path %>", {keyword: textbox.value}, function(data) {refresh(data); }, "json");}
-); } );
+    $("#submit").click(function () {
+
+        $.get("search#fetch_by_keyword", {keyword: textbox.value}, 
+              refresh(data), "json");
+        
+    alert("check2");
+*/
+});
 
 // refresh keywords and redraw graph
 // callback function for our AJAX calls
 function refresh(data) {
+
+    alert("refresh");
 
     return;
 
@@ -119,27 +122,3 @@ function renderKeyword(c, x, y, str)
 
 }
 
-</script>
-
-<div id="main">
-  <h1 class="center">OnTop Results</h1>
-
-  <div id="displaydiv" class="center">
-    <canvas id="display" style="border:1px solid #000000;"></canvas>
-  </div>
-
-  <div id="searchbox" class="center">
-
-    <input id="keyword" name="keyword" type="text" value="bayes" />
-    <input id="submit" type="button" value="Search!" />
-    
-  </div>
-
-  <div id="footer" >
-
-    <div id="leftinfo">
-	  <p id="version" class="flush">Alpha v1.0</p>
-	  <p id="updated" class="flush">October 29, 2012</p>
-    </div>
-  </div>
-</div>

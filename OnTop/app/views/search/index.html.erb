@@ -1,7 +1,20 @@
-<h1>Welcome to OnTop search engine</h1>
+<div id="main">
+  <h1 class="center">OnTop search engine</h1>
 
-<p> Please enter your keyword in the search box below</p>
-<p></p>
+  <div id="searchbox" class="center">
 
-<input type="text" id="keyword" name="keyword"/>
-<input type="submit" value="Submit">
+    <form action="/search" method="get">
+      <input id="keyword" name="keyword" type="text" value="bayes" />
+      <input id="submit" type="submit" value="Search!" />
+    </form>    
+    
+  </div>
+
+  <div id="footer" >
+
+    <div id="leftinfo">
+	  <p id="version" class="flush">Alpha v1.0</p>
+	  <p id="updated" class="flush">October 29, 2012</p>
+    </div>
+  </div>
+</div>

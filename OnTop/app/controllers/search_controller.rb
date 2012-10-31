@@ -1,8 +1,14 @@
 class SearchController < ApplicationController
   def index
   	@greetings = "Welcome to OnTop search engine"
-  end
+    @key_word = params[:keyword]
 
+    if @key_word != nil and @key_word != ''
+      redirect_to :action => 'show', :keyword => @key_word
+    end
+
+  end
+ 
   def show
   	@key_word = params[:keyword]
   end
