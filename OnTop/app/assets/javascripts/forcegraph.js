@@ -1,30 +1,71 @@
-function graph(nodelist, colconst, springk)
+//////////////////////
+/* GLOBAL VARIABLES */
+//////////////////////
+// configuration for our graph object
+// set constants here
+var config = new Object();
+config.node.fill.color.fresh;
+config.node.fill.color.visited;
+config.node.radius;
+config.node.stroke.width;
+
+config.node.stroke.color.fresh;
+config.node.stroke.color.visited;
+
+config.link.visited;
+config.link.fresh;
+config.link.width;
+
+
+// constructor
+function graph(canvasid, nodelist, conf)
 {
-    // constructor for a graph object
-    this.colconst = colconst;
-    this.springk = springk;
 
     // define node locations given a mapping of nodes with a set of edges 
     // nodelist is a JSON object, parse into the graph object
-    this.nodes = JSON.parse(nodelist);
-    var numnodes = this.nodes.length();
-    
+    var input = JSON.parse(nodelist);
+    var numnodes = nodes.length();
+
+    var canvas = document.getElementById(canvasid);
+
+    // create a Kinetic stage to draw on
+    this.stage = new Kinetic.Stage({
+        container: canvasid,
+        width: canvas.width,
+        height: canvas.height
+    });
+
+    // create three Kinetic layers
+    // links, nodes, and tool tips 
+    var linksLayer = new Kinetic.Layer();
+    var nodesLayer = new Kinetic.Layer();
+    var tipsLayer = new Kinetic.Layer();
+
+    this.nodes = new Array();
+
     // initialize the positions and velocities of each node in the graph
     for(i = 0; i < numnodes; i++) 
     {
         
-        // no movement
-        this.nodes[i].vx = 0;
-        this.nodes[i].vy = 0;
-        // random position
-        this.nodes[i].x = Math.random();
-        this.nodes[i].y = Math.random();
+        // initialize each node as a Kinetic object 
+        this.nodes[i] = new Kinetic.Circle({
+            x: Math.floor(Math.random()*canvas.width);
+            y: Math.floor(Math.random()*canvas.height);
+            radius: conf.node.radius,
+            fill: conf.node.fill.color.fresh,
+            stroke: conf.stroke.color.fresh,
+            strokeWidth: conf.node.stroke.width,
+            vx: 0,
+            vy: 0,
+            keyword: input[i].keyword
+        });
+
         // set default charge; we can set the charge of a node to further
         // distance it from the other nodes
         this.nodes[i].charge = 1;
         
         // swap out the keyword string in our edges list for actual node objects
-        for (edge in this.nodes[i].edges)
+        for (edge in input.edges)
         {
             
             var j = 0;
