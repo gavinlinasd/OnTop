@@ -45,13 +45,25 @@ class SearchController < ApplicationController
 		# get the key and its friends
 		@key = Keyword.find_by_name(@keyword)
 		@friends = @key.friends
-		@result = [{:keyword => @key.name}]
+		@nodes = [{:keyword => @key.name}]
 
 		# parse into the right format
 
 		@friends.each do |f|
-			@result += [{:keyword => f.name}]
+			@nodes += [{:keyword => f.name}]
 		end
+
+		@edges = []
+		# Generate random data for now
+		for i in (0..@nodes.size-1)
+			for j in (0..@nodes.size-1)
+				if i<j
+					@edges += [{:key1 => @nodes[i][:keyword], :key2 => @nodes[j][:keyword], :metric => rand }]
+				end
+			end
+		end
+
+		@result = { :nodes => @nodes, :edges => @edges }
 
 	end
 
