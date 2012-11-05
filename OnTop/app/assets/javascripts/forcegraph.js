@@ -40,10 +40,8 @@ function graph(canvasid, input, conf)
     for(i = 0; i < numnodes; i++) 
     {
 
-        var current = this.nodes[i];
-        
         // initialize each node as a Kinetic object 
-        current = new Kinetic.Circle({
+        this.nodes[i] = new Kinetic.Circle({
             x: Math.floor(Math.random()*canvas.width),
             y: Math.floor(Math.random()*canvas.height),
             radius: conf.node.radius,
@@ -56,56 +54,66 @@ function graph(canvasid, input, conf)
             fixed: false
         });
 
+        console.log(this.nodes[i]);
+
         // add the object to the node layer
-        this.nodesLayer.add(current);
+        this.nodesLayer.add(this.nodes[i]);
 
         // create a text to overlay on this node
         var tip = new Kinetic.Text({
-            text: current.keyword,
+            text: input.nodes[i].keyword,
             fontFamily: 'Calibri',
             fontSize: 14,
             padding: 5,
             textFill: 'black',
             visible: true,
-            node: current
+            node: this.nodes[i]
         });
 
-        tip.setPosition(current.x - tip.getWidth()/2, current.y - tip.getHeight()/2); 
+        tip.setPosition(this.nodes[i].x - tip.getWidth()/2, this.nodes[i].y - tip.getHeight()/2); 
 
         this.tipsLayer.add(tip);
 
     }
-        
+       
+    var numedges = input.edges.length;
+
     // add edges to each node
     // swap out the keyword string in our edges list for actual node objects
-    for (edge in this.edges)
+    var e = 0; 
+    for (e = 0; e < numedges; e++)
     {
             
-        var j;
+        var edge = input.edges[e];
 
-        if (edge.keyword1 == edge.keyword2)
-            alert("Error: key shares edge with self. " + edge.keyword1);
+
+        if (edge.key1 == edge.key2)
+            alert("Error: key shares edge with self. " + edge.key1);
 
         // find the appropriate node
+
+        var j;
         for (j = 0; j < numnodes; j++)
         {
-            if (edge.keyword1 == this.nodes[j].keyword) 
-                edge.keyword1 = this.nodes[j];
+            console.log(this.nodes[j].attrs.keyword + " and " + edge.key1);
+
+            if (edge.key1 == this.nodes[j].attrs.keyword) 
+                edge.key1 = this.nodes[j];
             
-            if (edge.keyword2 == this.nodes[j].keyword)
-                edge.keyword1 = this.nodes[j];
+            if (edge.key2 == this.nodes[j].attrs.keyword)
+                edge.key2 = this.nodes[j];
             
         }
 
-        if (typeof edge.keyword1 == "string")
-            alert("Error: keyword to node conversion failed. " + edge.keyword);
+        if (typeof edge.key1 == "string")
+            alert("Error: keyword to node conversion failed. " + edge.key1);
 
-        if (typeof edge.keyword2 == "string")
-            alert("Error: keyword to node conversion failed. " + edge.keyword);
+        if (typeof edge.key2 == "string")
+            alert("Error: keyword to node conversion failed. " + edge.key2);
      
         // construct and add a visible link between the two nodes
         var link = new Kinetic.Line({
-            can: [edge.keyword1.x, edge.keyword1.y, edge.keyword2.x, edge.keyword2.y],
+            can: [edge.key1.x, edge.key1.y, edge.key2.x, edge.key2.y],
             stroke: conf.link.fresh,
             strokeWidth: conf.link.width,
         });
@@ -168,8 +176,8 @@ graph.prototype.step = function ()
     for (edge in graph.edges)
     {
 
-        var u = edge.keyword1;
-        var v = edge.keyword2;
+        var u = edge.key1;
+        var v = edge.key2;
 
         u.fx += this.attraction*(u.x - v.x);
         u.fy += this.attraction*(u.y - v.y);
