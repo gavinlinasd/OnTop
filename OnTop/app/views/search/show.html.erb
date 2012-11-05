@@ -55,84 +55,14 @@ $(document).ready(function () {
 function refresh(data) {
 
 	console.log(data);
-    //if (net == null) // if our graph doesn't exist, build it
-    net = graph(data);
-    //else // otherwise, update it with the JSON object
-    //    net.updateNodeList(req.responseText);
+    var g = graph(data);
+
+    g.nodesLayer.draw();
     
     // allow the graph to settle
-	console.log(net);
+	console.log(g);
 	console.log(this);
-    this.solve();
-
-    render(disp, this);
-
-}
-
-// draw the graph g centered on canvas c
-function render(c, g) 
-{
-    // open a 2D context to the canvas to reuse
-    var ctx;
-    // draw links first
-    for (node in g.nodes) 
-    {
-
-        for (other in node.edges)
-        {
-            renderLink(c, node.x, node.y, other.x, other.y);
-        }
-
-    }
-
-    // draw nodes and keywords
-    for (node in g.nodes) 
-    {
-
-        renderNode(c, node.x, node.y);
-        //renderKeyword(c, x, y, node.keyword)
-
-    }
-
-}
-
-function renderNode(c, x, y) 
-{
-    // get context
-    var ctx = c.getContext("2d");
-
-    ctx.beginPath();
-    ctx.arc(x, y, 50, 0, 2*Math.PI);
-    ctx.fillStyle="rgb(200, 200, 255)";
-    ctx.strokeStyle="rgb(0, 0, 255)";
-    ctx.fill();
-    ctx.stroke();
-
-}
-
-function renderLink(c, x1, y1, x2, y2) 
-{
-    // get context
-    var ctx = c.getContext("2d");
-    ctx.beginPath();
-    ctx.moveTo(x1, y1);
-    ctx.lineTo(x2, y2);
-    ctx.strokeStyle = "rgb(0, 0, 255)";
-    ctx.stroke();
-
-}
-
-// draw a black keyword centered at x, y
-function renderKeyword(c, x, y, str)
-{
-
-    // get context
-    var ctx = c.getContext("2d");
-
-    ctx.font="20px Helvetica";
-    var size = ctx.measureText(str);
     
-    ctx.fillText(str, x - size.width/2, y + 10);
 
 }
 

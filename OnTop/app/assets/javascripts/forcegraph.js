@@ -1,62 +1,130 @@
-function graph(nodelist, colconst, springk)
+//////////////////////
+/* GLOBAL VARIABLES */
+//////////////////////
+
+// constructor
+function graph(canvasid, input, conf)
 {
-    // constructor for a graph object
-    this.colconst = colconst;
-    this.springk = springk;
+
+    this.bounds = {left: Number.NEGATIVE_INFINITY, right: Number.POSITIVE_INFINITY, 
+                   up: Number.NEGATIVE_INFINITY, down: Number.POSITIVE_INFINITY};
+
+    this.dampening = 0.9;
+    this.attraction = 0.06;
+    this.replusion = 140;
 
     // define node locations given a mapping of nodes with a set of edges 
     // nodelist is a JSON object, parse into the graph object
-	
+    var numnodes = nodes.length();
 
-    //this.nodes = JSON.parse(nodelist);
-    this.nodes = nodelist;
-	
-	console.log(this.nodes[0].name);
+    var canvas = document.getElementById(canvasid);
 
-    var numnodes = this.nodes.length;
-    
+    // create a Kinetic stage to draw on
+    this.stage = new Kinetic.Stage({
+        container: canvasid,
+        width: canvas.width,
+        height: canvas.height
+    });
+
+    // create three Kinetic layers
+    // links, nodes, and tool tips 
+    this.linksLayer = new Kinetic.Layer();
+    this.nodesLayer = new Kinetic.Layer();
+    this.tipsLayer = new Kinetic.Layer();
+
+    this.nodes = new Array();
+    this.edges = input.edges;
+
     // initialize the positions and velocities of each node in the graph
     for(i = 0; i < numnodes; i++) 
     {
+
+        var current = this.nodes[i];
         
-        // no movement
-        this.nodes[i].vx = 0;
-        this.nodes[i].vy = 0;
-        // random position
-        this.nodes[i].x = Math.random();
-        this.nodes[i].y = Math.random();
-        // set default charge; we can set the charge of a node to further
-        // distance it from the other nodes
-        this.nodes[i].charge = 1;
+        // initialize each node as a Kinetic object 
+        current = new Kinetic.Circle({
+            x: Math.floor(Math.random()*canvas.width);
+            y: Math.floor(Math.random()*canvas.height);
+            radius: conf.node.radius,
+            fill: conf.node.fill.color.fresh,
+            stroke: conf.node.stroke.color.fresh,
+            strokeWidth: conf.node.stroke.width,
+            vx: 0,
+            vy: 0,
+            keyword: input.nodes[i].keyword,
+            fixed: false
+        });
+
+        // add the object to the node layer
+        this.nodesLayer.add(current);
+
+        // create a text to overlay on this node
+        var tip = new Kinetic.Text({
+            text: current.keyword,
+            fontFamily: 'Calibri',
+            fontSize: 14,
+            padding: 5,
+            textFill: 'black',
+            visible: true;,
+            node: current
+        });
+
+        tip.setPosition(current.x - tip.getWidth()/2, current.y - tip.getHeight()/2); 
+
+        this.tipsLayer.add(tip);
+
+    }
         
-        // swap out the keyword string in our edges list for actual node objects
-        for (edge in this.nodes[i].edges)
+    // add edges to each node
+    // swap out the keyword string in our edges list for actual node objects
+    for (edge in this.edges)
+    {
+            
+        var j;
+
+        if (edge.keyword1 == edge.keyword2)
+            alert("Error: key shares edge with self. " + edge.keyword1);
+
+        // find the appropriate node
+        for (j = 0; j < numnodes; j++)
         {
+            if (edge.keyword1 == this.nodes[j].keyword) 
+                edge.keyword1 = this.nodes[j];
             
-            var j = 0;
-
-            // find the appropriate node
-            for (; j < numnodes; j++)
-            {
-                if (edge.keyword == this.nodes[j].keyword) 
-                {
-                    edge.keyword = this.nodes[j];
-                }
-            
-            }
-
-            if (typeof edge.keyword == "string")
-                alert("Error: keyword to node conversion failed.");
+            if (edge.keyword2 == this.nodes[j].keyword)
+                edge.keyword1 = this.nodes[j];
             
         }
 
+        if (typeof edge.keyword1 == "string")
+            alert("Error: keyword to node conversion failed. " + edge.keyword);
+
+        if (typeof edge.keyword2 == "string")
+            alert("Error: keyword to node conversion failed. " + edge.keyword);
+     
+        // construct and add a visible link between the two nodes
+        var link = new Kinetic.Line({
+            can: {edge.keyword1.x, edge.keyword1.y, edge.keyword2.x, edge.keyword2.y},
+            stroke: conf.link.fresh,
+            strokeWidth: conf.link.width,
+        });
+
+        this.linksLayer.add(link);
+   
     }
 
-//	console.log(this);
+    // finish up
+    this.stage.add(this.linksLayer);
+    this.stage.add(this.nodesLayer);
+    this.stage.add(this.tipsLayer);
+
+    this.render 
+
 
 }
 
-function updateForce()
+// updates the graph with a single calculation of applied forces
+graph.prototype.step = function ()
 {
     // calculate the total kinetic energy
     var total_energy = 0;
@@ -64,62 +132,63 @@ function updateForce()
     var dy = 0;
     var F = 0;
     var dist = 0;
-    var theta = 0;
+    //var theta = 0;
 
-	// not sure if I need this but timestep and dampening undefined
-	var timestep = 1;
-	var dampening = 1;
-
-    // run for each node
+    // Coloumb's Law  for each node
     for (node in this.nodes) 
     {
-        net_force_x = 0;
-        net_force_y = 0;
+        node.fx = 0;
+        node.fy = 0;
 
         // attempt to separate nodes using Coloumb's Law
         for (other_node in this.nodes) 
         {
             // skip if this is the same node
-            if (other_node.keyword == node.keyword)
-            {
-                continue;
-            }
+            if (other_node.keyword == node.keyword) continue;
 
             // otherwise, calculate F
             dx = node.x - other_node.x;
             dy = node.y - other_node.y;
-            theta = Math.atan(dy/dx);
+            //theta = Math.atan(dy/dx);
             dist = dx*dx + dy*dy;
-            F = this.colconst*node.charge*other_node.charge/dist;
+            if (dist==0) dist = 0.001;
+
+            F = this.repulsion/dist;
 
             // distribute F to x and y directions
-            net_force_y = net_force_y + F*Math.sin(theta);
-            net_force_x = net_force_x + F*Math.cos(theta);
+            node.fx += F*dx;
+            node.fy += F*dy;
 
         }
 
-        // attempt to connect linked nodes using Hooke's Law 
-        for (edge in node.edges)
-        {
+    }
+        
+    // attempt to connect linked nodes using Hooke's Law 
+    for (edge in graph.edges)
+    {
 
-            dx = node.x - edge.keyword.x;
-            dy = node.y - edge.keyword.y;
-            theta = Math.atan(dy/dx);
-            dist = Math.sqrt(dx*dx + dy*dy);
-            F = -this.springk*(dist - 1 + metric);
-            
-            // distribute F to x and y directions
-            net_force_y = net_force_y + F*Math.sin(theta);
-            net_force_x = net_force_x + F*Math.cos(theta);
+        var u = edge.keyword1;
+        var v = edge.keyword2;
 
-        }
+        u.fx += this.attraction*(u.x - v.x);
+        u.fy += this.attraction*(u.y - v.y);
+        v.fx += this.attraction*(v.x - u.x);
+        v.fx += this.attraction*(v.y - u.y);
 
+    }
+
+    // update each node's movement based on applied forces
+    for (n in this.nodes) {
+        
+        // skip fixed nodes
+        if (n.fixed == true) continue;
+        
         // damp node's movement
-        node.vx = (node.vx + timestep*net_force_x)*dampening;
-        node.vy = (node.vy + timestep*net_force_y)*dampening;        
-        node.x = node.x + node.vx*timestep;
-        node.y = node.y + node.vy*timestep;
-        total_energy = total_energy + node.charge*(node.vx^2 * node.vy^2);
+        n.vx = (node.vx + n.fx)*this.dampening;
+        n.vy = (node.vy + n.fy)*this.dampening;        
+        n.x = node.x + node.vx;
+        n.y = node.y + node.vy;
+        total_energy = total_energy + (node.vx^2 * node.vy^2);
 
     }
 
@@ -128,47 +197,19 @@ function updateForce()
 
 }
 
-function solve()
+// iterates through force update steps until the graph is stable
+graph.prototype.solve = function(threshold, iterations)
 {
-    var threshold = 0.001;
-    while (this.updateForce() > threshold) {}
+    while (this.step() > threshold && iterations > 0) {iterations--;}
 }
 
-function updateNodeList(nodelist) 
-{
-    // removes outdated nodes from the graph, inserts new nodes while 
-    // attempting to maintain the structure of the old graph
-    numnodes = nodelist.length();
+function constrain(down, x, up) {
 
-    // initialize a new graph
-    updated = new graph(nodelist);
-
-    // for each node in the nodelist that matches a node in the old graph
-    // set positions
-    for (node in updated.nodes)
-    {
-        
-        // if the existing graph contains our points
-        for (old_node in this.nodes)
-        {
-
-            if(node.keyword = old_node.keyword)
-            {
-                // set the points to their old coordinates
-                node.x = old_node.x;
-                node.y = old_node.y;
-                
-                break;
-            }
-
-        }
-
-
-    }
+    if(x > up) return up;
+    if(x < down) return down;
+    return x;
 
 }
-
-
 
 
 

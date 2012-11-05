@@ -1,28 +1,52 @@
 // globals
-// our graph or network
-var net;
 // canvas handle
 var disp;
 var textbox;
 var dispdiv;
+// configuration for our graph object
+// set constants here
+var config = new Object();
+config.node.fill.color.fresh;
+config.node.fill.color.visited;
+config.node.radius;
+config.node.stroke.width;
+
+config.node.stroke.color.fresh;
+config.node.stroke.color.visited;
+
+config.link.visited;
+config.link.fresh;
+config.link.width;
 
 // initialization
 $(document).ready(function () {
 
-    net = null;
-    dispdiv = document.getElementById("displaydiv");
-    disp = document.getElementById("display");
+    /*net = null;
     textbox = document.getElementById("keyword");
 
-    disp.width = dispdiv.clientWidth;
-    disp.height = dispdiv.clientHeight;
-
+    
     alert("<%= search_fetch_key_path %>");
 
     // default load for the page
 //    $.get("search#fetch_key", {keyword: textbox.value}, refresh(data), "json");
 
     alert("check2");
+*/
+
+    // construct a static json data set
+    var testset = {nodes: [{keyword: "node1"}, {keyword: "node2"}, {keyword: "node3"}],
+                   edges: [
+                       {keyword1: "node1", metric: 0.5, keyword2: "node2"},
+                       {keyword1: "node1", metric: 0.5, keyword2: "node3"},
+                       {keyword1: "node2", metric: 0.3, keyword2: "node3"}
+                   ]
+                  };
+
+    dispdiv = document.getElementById("displaydiv");
+    disp = document.getElementById("display");
+    disp.width = dispdiv.clientWidth;
+    disp.height = dispdiv.clientHeight;
+    var g = graph("display", testset, config);
 
      /*
     // handler function for refreshing the page
@@ -39,22 +63,15 @@ $(document).ready(function () {
 // callback function for our AJAX calls
 function refresh(data) {
 
-    alert("refresh");
-
-    return;
-
-    //if (net == null) // if our graph doesn't exist, build it
-    net = graph(data);
-    //else // otherwise, update it with the JSON object
-    //    net.updateNodeList(req.responseText);
+    // build a new graph for the data
+    g = graph(data);
+    g.nodesLayer.draw();
     
-    // allow the graph to settle
-    net.solve();
-
-    render(disp, net);
+    //g.solve();
 
 }
 
+/*
 // draw the graph g centered on canvas c
 function render(c, g) 
 {
@@ -122,3 +139,4 @@ function renderKeyword(c, x, y, str)
 
 }
 
+*/
