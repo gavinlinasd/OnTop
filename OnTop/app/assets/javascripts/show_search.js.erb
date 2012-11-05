@@ -1,10 +1,3 @@
-<% content_for :script do %>
-<%= javascript_include_tag "forcegraph", :debug =>true %>
-
-<% end %>
-
-<script>
-
 // globals
 // our graph or network
 var net;
@@ -19,53 +12,46 @@ $(document).ready(function () {
     net = null;
     dispdiv = document.getElementById("displaydiv");
     disp = document.getElementById("display");
+    textbox = document.getElementById("keyword");
 
     disp.width = dispdiv.clientWidth;
     disp.height = dispdiv.clientHeight;
 
-	// Javascript to make AJAX request
+    alert("<%= search_fetch_key_path %>");
 
-	var form_name = "#search_box_form";
+    // default load for the page
+//    $.get("search#fetch_key", {keyword: textbox.value}, refresh(data), "json");
 
-	$(form_name).submit(function(e) {
-		// Cancel default form submission action
-		e.preventDefault();
+    alert("check2");
 
-		var dataString = $(form_name).serialize();
-		// create ajax request
-		$.ajax({
-			
-			url: "<%= search_fetch_graph_path %>",
-			data: dataString,
-			dataType: "json",
-			success: function(data) {
-				// can added anything that's necessary
-				refresh(data);
-				}
-				
-		});
+     /*
+    // handler function for refreshing the page
+    $("#submit").click(function () {
 
-
-	});
-
+        $.get("search#fetch_by_keyword", {keyword: textbox.value}, 
+              refresh(data), "json");
+        
+    alert("check2");
+*/
 });
 
 // refresh keywords and redraw graph
 // callback function for our AJAX calls
 function refresh(data) {
 
-	console.log(data);
+    alert("refresh");
+
+    return;
+
     //if (net == null) // if our graph doesn't exist, build it
     net = graph(data);
     //else // otherwise, update it with the JSON object
     //    net.updateNodeList(req.responseText);
     
     // allow the graph to settle
-	console.log(net);
-	console.log(this);
-    this.solve();
+    net.solve();
 
-    render(disp, this);
+    render(disp, net);
 
 }
 
@@ -89,8 +75,8 @@ function render(c, g)
     for (node in g.nodes) 
     {
 
-        renderNode(c, node.x, node.y);
-        //renderKeyword(c, x, y, node.keyword)
+        renderNode(c, x, y);
+        renderKeyword(c, x, y, node.keyword)
 
     }
 
@@ -135,34 +121,4 @@ function renderKeyword(c, x, y, str)
     ctx.fillText(str, x - size.width/2, y + 10);
 
 }
-
-</script>
-
-
-
-<%# render 'searchbox' %>
-
-<div id="main">
-  <h1 class="center">OnTop Results</h1>
-
-  <div id="displaydiv" class="center">
-    <canvas id="display" style="border:1px solid #000000;"></canvas>
-  </div>
-
-  <div id="search_box" class="center">
-    <form id="search_box_form">
-	  <input type="text" id="keyword" name="keyword"/>
-	  <input type="submit" value="Search">
-    </form>
-  </div>
-
-  <div id="footer" >
-
-    <div id="leftinfo">
-	  <p id="version" class="flush">Alpha v1.0</p>
-	  <p id="updated" class="flush">October 29, 2012</p>
-    </div>
-  </div>
-</div>
-
 

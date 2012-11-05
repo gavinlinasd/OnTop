@@ -1,18 +1,19 @@
 OnTop::Application.routes.draw do
 
-  root :to => 'search#show'
+  # You can have the root of your site routed with "root"
+  # just remember to delete public/index.html.
+  
+  # default route to search controller
+  root :to => 'search#index'
 
   # For search controller
-  match 'search/' => 'search#show'
+  match 'search' => 'search#index', :as => 'search'
   match 'search/show' => 'search#show'
-  # match 'search/index' => 'search#index'
- 
   # functional actions, will only turn in JSON form
-  match 'search/fetch_key' => 'search#fetch_by_keyword'
+  match 'search/fetch_key' => 'search#fetch_by_keyword' 
   match 'search/fetch_page' => 'search#fetch_page_by_keyword'
+  match 'search/fetch_graph' => 'search#fetch_graph_data' 
 
-#  get "search/index"
-#  get "search/show"
 
   # The priority is based upon order of creation:
   # first created -> highest priority.
@@ -60,10 +61,6 @@ OnTop::Application.routes.draw do
   #     # (app/controllers/admin/products_controller.rb)
   #     resources :products
   #   end
-
-  # You can have the root of your site routed with "root"
-  # just remember to delete public/index.html.
-  # root :to => 'welcome#index'
 
   # See how all your routes lay out with "rake routes"
 

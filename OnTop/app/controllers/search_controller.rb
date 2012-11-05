@@ -1,5 +1,13 @@
 class SearchController < ApplicationController
+  def index
+    @key_word = params[:keyword]
 
+    if @key_word != nil and @key_word != ''
+      redirect_to :action => 'show', :keyword => @key_word
+    end
+
+  end
+ 
   def show
   	@key_word = params[:keyword]
   end
@@ -27,7 +35,37 @@ class SearchController < ApplicationController
 
   end
 
+  def fetch_graph_data
+	# Fetch the graph data to feed the Canvas
+
+  	@keyword = params[:keyword]
+	if Keyword.find_by_name(@keyword)==nil
+		@result = []
+	else
+		# get the key and its friends
+		@key = Keyword.find_by_name(@keyword)
+		@friends = @key.friends
+		@result = [{:keyword => @key.name}]
+
+		# parse into the right format
+
+		@friends.each do |f|
+			@result += [{:keyword => f.name}]
+		end
+
+	end
+
+	# Return in the format of JSON object
+	respond_to do |format|
+		format.json { render :json => @result }
+	end
+
+
+  end
+
+
   def fetch_friendship_by_keyword_pairs
+  	##### Deprecated method #####
   	# Get the friendship status between two keywords
 
 	@key1 = parames[:key1]

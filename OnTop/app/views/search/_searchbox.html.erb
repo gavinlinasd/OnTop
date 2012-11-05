@@ -1,6 +1,6 @@
-<div id="search_box_form">
+<div id="search_box">
 
-<form id="search_box">
+<form id="search_box_form">
 	<input type="text" id="keyword" name="keyword"/>
 	<input type="submit" value="Search">
 </form>
@@ -11,16 +11,20 @@
 
 // Javascript to make AJAX request
 
-	var form_name = "#search_box";
+	var form_name = "#search_box_form";
 
-	$(form_name).submit(function() {
+	$(form_name).submit(function(e) {
 		// Cancel default form submission action
-		event.preventDefault();
+		e.preventDefault();
 
+		var dataString = $(form_name).serialize();
 		// create ajax request
 		$.ajax({
 			
-			url: "<%= path_
+			url: "<%= search_fetch_key_path %>",
+			data: dataString,
+			dataType: "json",
+			success: function(data) { alert(data);}
 
 		});
 
