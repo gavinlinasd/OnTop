@@ -1,13 +1,34 @@
 <% content_for :script do %>
 <%= javascript_include_tag "forcegraph", :debug =>true %>
+<%= javascript_include_tag "kinetic-v4.0.5.min.js", :debug =>true %>
 
 <% end %>
 
 <script>
 
+
 // globals
-// our graph or network
-var net;
+// configuration for our graph object
+// set constants here
+var config = new Object();
+config.node = new Object();
+config.node.fill = new Object();
+config.node.fill.color = new Object();
+config.node.fill.color.fresh = "blue";
+config.node.fill.color.visited = "red";
+config.node.radius = 20;
+config.node.stroke = new Object();
+config.node.stroke.color = new Object();
+config.node.stroke.width = 4;
+config.node.stroke.color.fresh = "blue";
+config.node.stroke.color.visited = "red";
+
+config.link = new Object();
+config.link.visited = "red";
+config.link.fresh = "blue";
+config.link.width = 4;
+
+
 // canvas handle
 var disp;
 var textbox;
@@ -55,7 +76,7 @@ $(document).ready(function () {
 function refresh(data) {
 
 	console.log(data);
-    var g = graph(data);
+    var g = graph("display", data, config);
 
     g.nodesLayer.draw();
     

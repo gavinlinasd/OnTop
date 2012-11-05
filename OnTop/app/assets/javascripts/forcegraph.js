@@ -15,7 +15,8 @@ function graph(canvasid, input, conf)
 
     // define node locations given a mapping of nodes with a set of edges 
     // nodelist is a JSON object, parse into the graph object
-    var numnodes = nodes.length();
+    console.log(input.nodes.length);
+    var numnodes = input.nodes.length;
 
     var canvas = document.getElementById(canvasid);
 
@@ -43,8 +44,8 @@ function graph(canvasid, input, conf)
         
         // initialize each node as a Kinetic object 
         current = new Kinetic.Circle({
-            x: Math.floor(Math.random()*canvas.width);
-            y: Math.floor(Math.random()*canvas.height);
+            x: Math.floor(Math.random()*canvas.width),
+            y: Math.floor(Math.random()*canvas.height),
             radius: conf.node.radius,
             fill: conf.node.fill.color.fresh,
             stroke: conf.node.stroke.color.fresh,
@@ -65,7 +66,7 @@ function graph(canvasid, input, conf)
             fontSize: 14,
             padding: 5,
             textFill: 'black',
-            visible: true;,
+            visible: true,
             node: current
         });
 
@@ -104,7 +105,7 @@ function graph(canvasid, input, conf)
      
         // construct and add a visible link between the two nodes
         var link = new Kinetic.Line({
-            can: {edge.keyword1.x, edge.keyword1.y, edge.keyword2.x, edge.keyword2.y},
+            can: [edge.keyword1.x, edge.keyword1.y, edge.keyword2.x, edge.keyword2.y],
             stroke: conf.link.fresh,
             strokeWidth: conf.link.width,
         });
