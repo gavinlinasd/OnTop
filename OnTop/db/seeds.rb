@@ -8,6 +8,7 @@
 Keyword.create(:name => "Bayes' Theorem", :wiki_page => "http://en.wikipedia.org/wiki/Bayes'_theorem")
 Keyword.create(:name => "Bayesian inference", :wiki_page => "http://en.wikipedia.org/wiki/Bayesian_inference")
 Keyword.create(:name => "Law of total probability", :wiki_page => "http://en.wikipedia.org/wiki/Law_of_total_probability")
+Keyword.create(:name => "Bayesian probability", :wiki_page => "http://en.wikipedia.org/wiki/Bayesian_probability")
 
 web1 = Webpage.create(:url => "http://jeff560.tripod.com/b.html")
 web2 = Webpage.create(:url => "http://mathworld.wolfram.com/BayesTheorem.html")
@@ -24,9 +25,16 @@ web6 = Webpage.create(:url => "http://books.google.com/books?id=Kglc9g5IPf4C&pg=
 Keyword.find_by_name("Law of total probability").webpages << web5
 Keyword.find_by_name("Law of total probability").webpages << web6
 
+web7 = Webpage.create(:url => "http://psychclassics.yorku.ca/Peirce/small-diffs.htm")
+Keyword.find_by_name("Bayesian probability").webpages << web3
+Keyword.find_by_name("Bayesian probability").webpages << web7
+
 key1 = Keyword.find_by_name("Bayes' Theorem")
 key2 = Keyword.find_by_name("Bayesian inference")
 key3 = Keyword.find_by_name("Law of total probability")
+key4 = Keyword.find_by_name("Bayesian probability")
 
 key1.befriend(key2, 0.6)
 key1.befriend(key3, 0.2)
+key1.befriend(key4, 0.85)
+key2.befriend(key4, 0.5)
