@@ -9,10 +9,10 @@ function graph(stage, input, conf)
     this.bounds = {left: Number.NEGATIVE_INFINITY, right: Number.POSITIVE_INFINITY, 
                    up: Number.NEGATIVE_INFINITY, down: Number.POSITIVE_INFINITY};
 
-    this.dampening = 0.8; // dampening to slow the model's movement
-    this.attraction = -0.06; // our spring constant 
-    this.repulsion = 1; // our particle charge constant
-    this.base = 100; // the average distance we want between nodes
+    this.dampening = 0.01; // dampening to slow the model's movement
+    this.attraction = 0.06; // our spring constant 
+    this.repulsion = 140; // our particle charge constant
+    this.base = 300; // the average distance we want between nodes
     this.scale = 100; // how much we want a link to vary based on the metric
 
     // define node locations given a mapping of nodes with a set of edges 
@@ -21,9 +21,9 @@ function graph(stage, input, conf)
 
     // create three Kinetic layers
     // links, nodes, and tool tips 
-    var linksLayer = new Kinetic.Layer();
-    var nodesLayer = new Kinetic.Layer();
-    var tipsLayer = new Kinetic.Layer();
+    var linksLayer = new Kinetic.Layer("links");
+    var nodesLayer = new Kinetic.Layer("nodes");
+    var tipsLayer = new Kinetic.Layer("tips");
 
     this.nodes = new Array();
     this.edges = input.edges;
@@ -48,6 +48,8 @@ function graph(stage, input, conf)
         this.nodes[i].fixed = false;
         this.nodes[i].vx = 0;
         this.nodes[i].vy = 0;
+        this.nodes[i].fx = 0;
+        this.nodes[i].fy = 0;
         this.nodes[i].keyword = input.nodes[i].keyword;
 
         // add the object to the node layer
@@ -146,6 +148,8 @@ graph.prototype.fixNode = function(keyword, x, y)
             node.fixed = true;
             node.attrs.x = x;
             node.attrs.y = y;
+            node.vx = 0;
+            node.vy = 0;
 
             // update the node's text
             var tip = node.tip;
@@ -164,13 +168,21 @@ graph.prototype.fixAll = function()
     // find our node and fix it
     var numnodes = this.nodes.length;
     var n;
-    for (n = 0; n < numnodes; n++) this.nodes[n].fixed = true;
-        
+    for (n = 0; n < numnodes; n++) 
+    {
+
+        var node = this.nodes[n];
+
+        node.fixed = true;
+        node.vx = 0;
+        node.vy = 0;
+    }
+
 }
 
 // frees a keyword to move
 // other nodes are allowed to still move
-graph.prototype.freeNode = function(keyword, x, y) 
+graph.prototype.freeNode = function(keyword) 
 {
     
     // find our node and fix it
@@ -180,11 +192,7 @@ graph.prototype.freeNode = function(keyword, x, y)
     {
         var node = this.nodes[n];
 
-        if (node.keyword == keyword) {
-            node.fixed = false;
-            node.attrs.x = x;
-            node.attrs.y = y;
-        }
+        if (node.keyword == keyword) node.fixed = false;
 
     }
 
@@ -206,7 +214,7 @@ graph.prototype.freeAll = function()
 
 
 // updates the graph with a single calculation of applied forces
-graph.prototype.step = function ()
+graph.prototype.step = function (time)
 {
     // calculate the total kinetic energy
     var total_energy = 0;
@@ -245,16 +253,19 @@ graph.prototype.step = function ()
             dist = dx*dx + dy*dy;
             if (dist==0) dist = 0.001;
 
-            F = this.repulsion/dist;
+            F = constrain(-0.1, this.repulsion/dist, 0.1);
+            
 
             // distribute F to x and y directions
             node.fx += F*dx;
             node.fy += F*dy;
 
+            //console.log(node.keyword, node.fx, node.fy, node.attrs.x, node.attrs.y);
+
         }
 
     }
-        
+   
     // attempt to connect linked nodes using Hooke's Law 
     for (e = 0; e < numedges; e++)
     {
@@ -266,10 +277,21 @@ graph.prototype.step = function ()
         var au = edge.key1.attrs;
         var av = edge.key2.attrs;
 
-        u.fx += this.attraction*(au.x - av.x);
-        u.fy += this.attraction*(au.y - av.y);
-        v.fx += this.attraction*(av.x - au.x);
-        v.fx += this.attraction*(av.y - au.y);
+        dx = au.x - av.x;
+        dy = au.y - av.y;
+        dist = Math.sqrt(dx*dx + dy*dy);
+
+        // the compression or extension of the spring is the difference
+        // between the desired spring length and the actual length
+        var desired = this.base + this.scale*(edge.metric - 0.5);
+        F = constrain(-0.1, this.attraction*(desired - dist), 0.1);
+
+        console.log(dist + " " + desired);
+
+        u.fx += F*(au.x - av.x);
+        u.fy += F*(au.y - av.y);
+        v.fx += F*(av.x - au.x);
+        v.fx += F*(av.y - au.y);
 
     }
 
@@ -285,12 +307,12 @@ graph.prototype.step = function ()
         {
             
             // damp node's movement
-            node.vx = (node.vx + node.fx)*this.dampening;
-            node.vy = (node.vy + node.fy)*this.dampening; 
+            node.vx = constrain(-10, (node.vx + time*node.fx)*this.dampening, 10);
+            node.vy = constrain(-10, (node.vy + time*node.fy)*this.dampening, 10); 
             // update the node's position
-            node.attrs.x = node.attrs.x + node.vx;
-            node.attrs.y = node.attrs.y + node.vy;
-            total_energy = total_energy + (node.vx^2 * node.vy^2);
+            node.attrs.x = node.attrs.x + time*node.vx;
+            node.attrs.y = node.attrs.y + time*node.vy;
+            total_energy = total_energy + (node.vx*node.vx + node.vy*node.vy);
 
         }
 

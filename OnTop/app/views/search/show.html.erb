@@ -32,7 +32,8 @@ config.link.width = 4;
 var g;
 // stage handle
 var stage;
-
+// animation handle
+var anim;
 // canvas handle
 var display;
 
@@ -72,18 +73,6 @@ $(document).ready(function () {
 
 	});
 
-    $("#step").click(function () {
-        
-        g.step();
-        // print out nodes locations according to Kinetic
-        //var node = stage.getChildren()[2].getChildren()[0];
-        //console.log(node.attrs.x + " " + node.attrs.y);
-
-        stage.draw();
-
-
-    });
-
 });
 
 // refresh keywords and redraw graph
@@ -93,8 +82,17 @@ function refresh(data, s) {
     s.removeChildren();
     g = new graph(s, data, config);
     // fix the center node
-    g.fixNode(data.nodes[0].keyword, stage.getWidth()/2, stage.getHeight()/2); 
-    stage.draw();
+    g.fixNode(data.nodes[0].keyword, stage.getWidth()/2, stage.getHeight()/2);
+
+    // start a new animation to handle graph drawing
+    anim = new Kinetic.Animation({
+        func: function(frame) {
+            g.step(frame.time/1000);
+        },
+        node: s
+    });
+
+    anim.start();
     
 }
 
@@ -114,8 +112,6 @@ function refresh(data, s) {
 	  <input type="submit" value="Search"/>
     </form>
   </div>
-
-    <input type="button" id="step" value="Step">
 
   <div id="footer" >
 
