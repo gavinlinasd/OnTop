@@ -71,10 +71,12 @@ function graph(stage, input, conf)
             this.setDraggable(false);
         });
 
+        // clicking on the nodes
         this.nodes[i].on('click', function() {
             this.visited = true;
             this.attrs.fill = config.node.fill.color.visited;
             this.attrs.stroke = config.node.stroke.color.visited;
+            window.open("http://www.google.com/search?q=" + this.keyword);
         });
         
 
