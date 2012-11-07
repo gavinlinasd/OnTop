@@ -87,7 +87,7 @@ function refresh(data, s) {
     // start a new animation to handle graph drawing
     anim = new Kinetic.Animation({
         func: function(frame) {
-            g.step(frame.time/1000);
+            var energy = g.step(frame.timeDiff/1000);
         },
         node: s
     });

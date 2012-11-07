@@ -9,10 +9,10 @@ function graph(stage, input, conf)
     this.bounds = {left: Number.NEGATIVE_INFINITY, right: Number.POSITIVE_INFINITY, 
                    up: Number.NEGATIVE_INFINITY, down: Number.POSITIVE_INFINITY};
 
-    this.dampening = 0.01; // dampening to slow the model's movement
+    this.dampening = 0.5; // dampening to slow the model's movement
     this.attraction = 0.06; // our spring constant 
     this.repulsion = 140; // our particle charge constant
-    this.base = 300; // the average distance we want between nodes
+    this.base = 200; // the average distance we want between nodes
     this.scale = 100; // how much we want a link to vary based on the metric
 
     // define node locations given a mapping of nodes with a set of edges 
@@ -23,13 +23,15 @@ function graph(stage, input, conf)
     // links, nodes, and tool tips 
     var linksLayer = new Kinetic.Layer("links");
     var nodesLayer = new Kinetic.Layer("nodes");
-    var tipsLayer = new Kinetic.Layer("tips");
+    var tipsLayer = new Kinetic.Layer("tips");    
+    var dragLayer = new Kinetic.Layer("drag");
+
 
     this.nodes = new Array();
     this.edges = input.edges;
 
-    var width = stage.getWidth();
-    var height = stage.getHeight();
+    this.width = stage.getWidth();
+    this.height = stage.getHeight();
 
     // initialize the positions and velocities of each node in the graph
     for(i = 0; i < numnodes; i++) 
@@ -37,20 +39,40 @@ function graph(stage, input, conf)
 
         // initialize each node as a Kinetic object 
         this.nodes[i] = new Kinetic.Circle({
-            x: Math.floor(Math.random()*width),
-            y: Math.floor(Math.random()*height),
+            x: (Math.random() - 0.5)*this.base*2 + this.width/2,
+            y: (Math.random() - 0.5)*this.base*2 + this.height/2,
             radius: conf.node.radius,
             fill: conf.node.fill.color.fresh,
             stroke: conf.node.stroke.color.fresh,
             strokeWidth: conf.node.stroke.width
         });
 
-        this.nodes[i].fixed = false;
-        this.nodes[i].vx = 0;
-        this.nodes[i].vy = 0;
-        this.nodes[i].fx = 0;
-        this.nodes[i].fy = 0;
-        this.nodes[i].keyword = input.nodes[i].keyword;
+        var node = this.nodes[i];
+
+        node.fixed = false;
+        node.vx = 0;
+        node.vy = 0;
+        node.fx = 0;
+        node.fy = 0;
+        node.keyword = input.nodes[i].keyword;
+
+        /*
+        // add functions for dragging nodes
+        node.on('mousedown', function() {
+            node.moveTo(dragLayer);
+            node.fixed = true;
+            node.vx = 0;
+            node.vy = 0;
+            node.setDraggable(true);
+            nodesLayer.draw();
+        });
+
+        node.on('dragend', function() {
+            node.moveTo(nodesLayer);
+            node.fixed = false;
+            node.setDraggable(false);
+        });
+        */
 
         // add the object to the node layer
         nodesLayer.add(this.nodes[i]);
@@ -62,6 +84,8 @@ function graph(stage, input, conf)
             fontSize: 14,
             padding: 5,
             textFill: 'black',
+            fill: 'white',
+            opacity: 0.75,
             visible: true,
             node: this.nodes[i]
         });
@@ -127,8 +151,8 @@ function graph(stage, input, conf)
     // add new layers
     stage.add(linksLayer);
     stage.add(nodesLayer);
+    stage.add(dragLayer);
     stage.add(tipsLayer);
-
 
 }
 
@@ -284,16 +308,16 @@ graph.prototype.step = function (time)
         // the compression or extension of the spring is the difference
         // between the desired spring length and the actual length
         var desired = this.base + this.scale*(edge.metric - 0.5);
-        F = constrain(-0.1, this.attraction*(desired - dist), 0.1);
+        F = this.attraction*(desired - dist);
 
-        console.log(dist + " " + desired);
-
-        u.fx += F*(au.x - av.x);
-        u.fy += F*(au.y - av.y);
-        v.fx += F*(av.x - au.x);
-        v.fx += F*(av.y - au.y);
+        u.fx += F*dx;
+        u.fy += F*dy;
+        v.fx += -F*dx;
+        v.fx += -F*dy;
 
     }
+
+    time = 1/30;
 
     // update each node's movement based on applied forces
     var n;
@@ -301,24 +325,30 @@ graph.prototype.step = function (time)
     {
 
         var node = this.nodes[n];
+        var na = node.attrs;
 
         // skip fixed nodes
         if (node.fixed == false)
         {
             
             // damp node's movement
-            node.vx = constrain(-10, (node.vx + time*node.fx)*this.dampening, 10);
-            node.vy = constrain(-10, (node.vy + time*node.fy)*this.dampening, 10); 
+            node.vx = (node.vx + time*node.fx)*this.dampening;
+            node.vy = (node.vy + time*node.fy)*this.dampening; 
             // update the node's position
-            node.attrs.x = node.attrs.x + time*node.vx;
-            node.attrs.y = node.attrs.y + time*node.vy;
+            na.x = na.x + time*node.vx;
+            na.y = na.y + time*node.vy;
+
+            // keep the nodes on the canvas
+            na.x = constrain(0, na.x, this.width);
+            na.y = constrain(0, na.y, this.height);
+
             total_energy = total_energy + (node.vx*node.vx + node.vy*node.vy);
 
         }
 
         // update each nodes text position
         var tip = node.tip;
-        tip.setPosition(node.attrs.x - tip.getWidth()/2, node.attrs.y - tip.getHeight()/2);
+        tip.setPosition(na.x - tip.getWidth()/2, na.y - tip.getHeight()/2);
 
     }
 
@@ -353,8 +383,4 @@ function constrain(down, x, up) {
     return x;
 
 }
-
-
-
-
 
