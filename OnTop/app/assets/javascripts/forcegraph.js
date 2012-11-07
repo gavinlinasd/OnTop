@@ -26,7 +26,6 @@ function graph(stage, input, conf)
     var tipsLayer = new Kinetic.Layer("tips");    
     var dragLayer = new Kinetic.Layer("drag");
 
-
     this.nodes = new Array();
     this.edges = input.edges;
 
@@ -47,32 +46,37 @@ function graph(stage, input, conf)
             strokeWidth: conf.node.stroke.width
         });
 
-        var node = this.nodes[i];
 
-        node.fixed = false;
-        node.vx = 0;
-        node.vy = 0;
-        node.fx = 0;
-        node.fy = 0;
-        node.keyword = input.nodes[i].keyword;
+        this.nodes[i].fixed = false;
+        this.nodes[i].visited = false;
+        this.nodes[i].vx = 0;
+        this.nodes[i].vy = 0;
+        this.nodes[i].fx = 0;
+        this.nodes[i].fy = 0;
+        this.nodes[i].keyword = input.nodes[i].keyword;
 
-        /*
         // add functions for dragging nodes
-        node.on('mousedown', function() {
-            node.moveTo(dragLayer);
-            node.fixed = true;
-            node.vx = 0;
-            node.vy = 0;
-            node.setDraggable(true);
+        this.nodes[i].on('mousedown', function() {
+            this.moveTo(dragLayer);
+            this.fixed = true;
+            this.vx = 0;
+            this.vy = 0;
+            this.setDraggable(true);
             nodesLayer.draw();
         });
 
-        node.on('dragend', function() {
-            node.moveTo(nodesLayer);
-            node.fixed = false;
-            node.setDraggable(false);
+        this.nodes[i].on('dragend', function() {
+            this.moveTo(nodesLayer);
+            this.fixed = false;
+            this.setDraggable(false);
         });
-        */
+
+        this.nodes[i].on('click', function() {
+            this.visited = true;
+            this.attrs.fill = config.node.fill.color.visited;
+            this.attrs.stroke = config.node.stroke.color.visited;
+        });
+        
 
         // add the object to the node layer
         nodesLayer.add(this.nodes[i]);
@@ -142,6 +146,7 @@ function graph(stage, input, conf)
         link.node2 = edge.key2;
 
         edge.link = link;
+        edge.visited = false;
 
         linksLayer.add(link);
    
@@ -184,6 +189,45 @@ graph.prototype.fixNode = function(keyword, x, y)
     }
 
 }
+
+graph.prototype.visitNode = function(keyword)
+{
+    var numnodes = this.nodes.length;
+    var n;
+    for (n = 0; n < numnodes; n++)
+    {
+        var node = this.nodes[n];
+
+        if (node.keyword == keyword) {
+            node.visited = true;
+            node.attrs.fill = config.node.fill.color.visited;
+            node.attrs.stroke = config.node.stroke.color.visited;
+        }
+
+
+    }
+
+}
+
+graph.prototype.clearNode = function(keyword)
+{
+    var numnodes = this.nodes.length;
+    var n;
+    for (n = 0; n < numnodes; n++)
+    {
+        var node = this.nodes[n];
+
+        if (node.keyword == keyword) {
+            node.visited = false;
+            node.attrs.fill = config.node.fill.color.fresh;
+            node.attrs.stroke = config.node.stroke.color.fresh;
+        }
+
+
+    }
+
+}
+
 
 // fixes all keyword in their current place
 graph.prototype.fixAll = function() 
@@ -357,6 +401,15 @@ graph.prototype.step = function (time)
     {
 
         var edge = this.edges[e];
+
+        // if both nodes are visited, color us red
+        if (edge.key1.visited && edge.key2.visited) {
+
+            edge.visited = true;
+            edge.link.attrs.stroke = config.link.visited;
+
+        }
+
         edge.link.setPoints([
             edge.key1.attrs.x, edge.key1.attrs.y,
             edge.key2.attrs.x , edge.key2.attrs.y

@@ -15,7 +15,7 @@ config.node = new Object();
 config.node.fill = new Object();
 config.node.fill.color = new Object();
 config.node.fill.color.fresh = "lightskyblue";
-config.node.fill.color.visited = "red";
+config.node.fill.color.visited = "tomato";
 config.node.radius = 30;
 config.node.stroke = new Object();
 config.node.stroke.color = new Object();
@@ -36,6 +36,8 @@ var stage;
 var anim;
 // canvas handle
 var display;
+
+var visited = new Array();
 
 // initialization
 $(document).ready(function () {
@@ -83,6 +85,7 @@ function refresh(data, s) {
     g = new graph(s, data, config);
     // fix the center node
     g.fixNode(data.nodes[0].keyword, stage.getWidth()/2, stage.getHeight()/2);
+    g.visitNode(data.nodes[0].keyword);
 
     // start a new animation to handle graph drawing
     anim = new Kinetic.Animation({
@@ -115,10 +118,7 @@ function refresh(data, s) {
 
   <div id="footer" >
 
-    <div id="leftinfo">
-	  <p id="version" class="flush">Alpha v1.0</p>
-	  <p id="updated" class="flush">October 29, 2012</p>
-    </div>
+    <div id="leftinfo"></div>
   </div>
 </div>
 
