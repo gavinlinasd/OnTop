@@ -9,9 +9,11 @@ function graph(stage, input, conf)
     this.bounds = {left: Number.NEGATIVE_INFINITY, right: Number.POSITIVE_INFINITY, 
                    up: Number.NEGATIVE_INFINITY, down: Number.POSITIVE_INFINITY};
 
-    this.dampening = 0.9;
-    this.attraction = 0.06;
-    this.repulsion = 140;
+    this.dampening = 0.8; // dampening to slow the model's movement
+    this.attraction = -0.06; // our spring constant 
+    this.repulsion = 1; // our particle charge constant
+    this.base = 100; // the average distance we want between nodes
+    this.scale = 100; // how much we want a link to vary based on the metric
 
     // define node locations given a mapping of nodes with a set of edges 
     // nodelist is a JSON object, parse into the graph object
@@ -40,10 +42,10 @@ function graph(stage, input, conf)
             radius: conf.node.radius,
             fill: conf.node.fill.color.fresh,
             stroke: conf.node.stroke.color.fresh,
-            strokeWidth: conf.node.stroke.width,
-            fixed: false
+            strokeWidth: conf.node.stroke.width
         });
 
+        this.nodes[i].fixed = false;
         this.nodes[i].vx = 0;
         this.nodes[i].vy = 0;
         this.nodes[i].keyword = input.nodes[i].keyword;
@@ -62,7 +64,8 @@ function graph(stage, input, conf)
             node: this.nodes[i]
         });
 
-        tip.setPosition(this.nodes[i].attrs.x - tip.getWidth()/2, this.nodes[i].attrs.y - tip.getHeight()/2); 
+        tip.setPosition(this.nodes[i].attrs.x - tip.getWidth()/2, this.nodes[i].attrs.y - tip.getHeight()/2);;
+        this.nodes[i].tip = tip;
 
         tipsLayer.add(tip);
 
@@ -83,7 +86,6 @@ function graph(stage, input, conf)
             alert("Error: key shares edge with self. " + edge.key1);
 
         // find the appropriate node
-
         var j;
         for (j = 0; j < numnodes; j++)
         {
@@ -109,6 +111,12 @@ function graph(stage, input, conf)
             strokeWidth: conf.link.width,
         });
 
+        // remember the nodes forming this link
+        link.node1 = edge.key1;
+        link.node2 = edge.key2;
+
+        edge.link = link;
+
         linksLayer.add(link);
    
     }
@@ -121,6 +129,81 @@ function graph(stage, input, conf)
 
 
 }
+
+// fixes a keyword in place
+// other nodes are allowed to still move
+graph.prototype.fixNode = function(keyword, x, y) 
+{
+    
+    // find our node and fix it
+    var numnodes = this.nodes.length;
+    var n;
+    for (n = 0; n < numnodes; n++) 
+    {
+        var node = this.nodes[n];
+
+        if (node.keyword == keyword) {
+            node.fixed = true;
+            node.attrs.x = x;
+            node.attrs.y = y;
+
+            // update the node's text
+            var tip = node.tip;
+            tip.setPosition(node.attrs.x - tip.getWidth()/2, node.attrs.y - tip.getHeight()/2);
+
+        }
+
+    }
+
+}
+
+// fixes all keyword in their current place
+graph.prototype.fixAll = function() 
+{
+    
+    // find our node and fix it
+    var numnodes = this.nodes.length;
+    var n;
+    for (n = 0; n < numnodes; n++) this.nodes[n].fixed = true;
+        
+}
+
+// frees a keyword to move
+// other nodes are allowed to still move
+graph.prototype.freeNode = function(keyword, x, y) 
+{
+    
+    // find our node and fix it
+    var numnodes = this.nodes.length;
+    var n;
+    for (n = 0; n < numnodes; n++) 
+    {
+        var node = this.nodes[n];
+
+        if (node.keyword == keyword) {
+            node.fixed = false;
+            node.attrs.x = x;
+            node.attrs.y = y;
+        }
+
+    }
+
+}
+
+// frees all keywords
+graph.prototype.freeAll = function() 
+{
+    
+    // find our node and fix it
+    var numnodes = this.nodes.length;
+    var n;
+    for (n = 0; n < numnodes; n++) this.nodes[n].fixed = false;
+
+}
+
+
+
+
 
 // updates the graph with a single calculation of applied forces
 graph.prototype.step = function ()
@@ -183,10 +266,10 @@ graph.prototype.step = function ()
         var au = edge.key1.attrs;
         var av = edge.key2.attrs;
 
-        u.fx -= this.attraction*(au.x - av.x);
-        u.fy -= this.attraction*(au.y - av.y);
-        v.fx -= this.attraction*(av.x - au.x);
-        v.fx -= this.attraction*(av.y - au.y);
+        u.fx += this.attraction*(au.x - av.x);
+        u.fy += this.attraction*(au.y - av.y);
+        v.fx += this.attraction*(av.x - au.x);
+        v.fx += this.attraction*(av.y - au.y);
 
     }
 
@@ -198,14 +281,35 @@ graph.prototype.step = function ()
         var node = this.nodes[n];
 
         // skip fixed nodes
-        if (node.fixed == true) continue;
-        
-         // damp node's movement
-        node.vx = (node.vx + node.fx)*this.dampening;
-        node.vy = (node.vy + node.fy)*this.dampening;   
-        node.attrs.x = node.attrs.x + node.vx;
-        node.attrs.y = node.attrs.y + node.vy;
-        total_energy = total_energy + (node.vx^2 * node.vy^2);
+        if (node.fixed == false)
+        {
+            
+            // damp node's movement
+            node.vx = (node.vx + node.fx)*this.dampening;
+            node.vy = (node.vy + node.fy)*this.dampening; 
+            // update the node's position
+            node.attrs.x = node.attrs.x + node.vx;
+            node.attrs.y = node.attrs.y + node.vy;
+            total_energy = total_energy + (node.vx^2 * node.vy^2);
+
+        }
+
+        // update each nodes text position
+        var tip = node.tip;
+        tip.setPosition(node.attrs.x - tip.getWidth()/2, node.attrs.y - tip.getHeight()/2);
+
+    }
+
+    // update our link positions as well
+    for (e = 0; e < numedges; e++) 
+    {
+
+        var edge = this.edges[e];
+        edge.link.setPoints([
+            edge.key1.attrs.x, edge.key1.attrs.y,
+            edge.key2.attrs.x , edge.key2.attrs.y
+        ]);
+
 
     }
 

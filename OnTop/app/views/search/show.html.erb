@@ -76,8 +76,10 @@ $(document).ready(function () {
         
         g.step();
         // print out nodes locations according to Kinetic
-        var node = stage.getChildren()[2].getChildren()[0];
-        console.log(node.attrs.x + " " + node.attrs.y);
+        //var node = stage.getChildren()[2].getChildren()[0];
+        //console.log(node.attrs.x + " " + node.attrs.y);
+
+        stage.draw();
 
 
     });
@@ -90,7 +92,9 @@ function refresh(data, s) {
 
     s.removeChildren();
     g = new graph(s, data, config);
-    
+    // fix the center node
+    g.fixNode(data.nodes[0].keyword, stage.getWidth()/2, stage.getHeight()/2); 
+    stage.draw();
     
 }
 
