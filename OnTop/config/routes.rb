@@ -4,7 +4,7 @@ OnTop::Application.routes.draw do
   # just remember to delete public/index.html.
   
   # default route to search controller
-  root :to => 'search#index'
+  root :to => 'search#show'
 
   # For search controller
   match 'search' => 'search#index', :as => 'search'
