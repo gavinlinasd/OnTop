@@ -3,7 +3,7 @@
 //////////////////////
 
 // constructor
-function graph(canvasid, input, conf)
+function graph(stage, input, conf)
 {
 
     this.bounds = {left: Number.NEGATIVE_INFINITY, right: Number.POSITIVE_INFINITY, 
@@ -11,30 +11,23 @@ function graph(canvasid, input, conf)
 
     this.dampening = 0.9;
     this.attraction = 0.06;
-    this.replusion = 140;
+    this.repulsion = 140;
 
     // define node locations given a mapping of nodes with a set of edges 
     // nodelist is a JSON object, parse into the graph object
-    console.log(input.nodes.length);
     var numnodes = input.nodes.length;
-
-    var canvas = document.getElementById(canvasid);
-
-    // create a Kinetic stage to draw on
-    this.stage = new Kinetic.Stage({
-        container: canvasid,
-        width: canvas.width,
-        height: canvas.height
-    });
 
     // create three Kinetic layers
     // links, nodes, and tool tips 
-    this.linksLayer = new Kinetic.Layer();
-    this.nodesLayer = new Kinetic.Layer();
-    this.tipsLayer = new Kinetic.Layer();
+    var linksLayer = new Kinetic.Layer();
+    var nodesLayer = new Kinetic.Layer();
+    var tipsLayer = new Kinetic.Layer();
 
     this.nodes = new Array();
     this.edges = input.edges;
+
+    var width = stage.getWidth();
+    var height = stage.getHeight();
 
     // initialize the positions and velocities of each node in the graph
     for(i = 0; i < numnodes; i++) 
@@ -42,22 +35,21 @@ function graph(canvasid, input, conf)
 
         // initialize each node as a Kinetic object 
         this.nodes[i] = new Kinetic.Circle({
-            x: Math.floor(Math.random()*canvas.width),
-            y: Math.floor(Math.random()*canvas.height),
+            x: Math.floor(Math.random()*width),
+            y: Math.floor(Math.random()*height),
             radius: conf.node.radius,
             fill: conf.node.fill.color.fresh,
             stroke: conf.node.stroke.color.fresh,
             strokeWidth: conf.node.stroke.width,
-            vx: 0,
-            vy: 0,
-            keyword: input.nodes[i].keyword,
             fixed: false
         });
 
-        console.log(this.nodes[i]);
+        this.nodes[i].vx = 0;
+        this.nodes[i].vy = 0;
+        this.nodes[i].keyword = input.nodes[i].keyword;
 
         // add the object to the node layer
-        this.nodesLayer.add(this.nodes[i]);
+        nodesLayer.add(this.nodes[i]);
 
         // create a text to overlay on this node
         var tip = new Kinetic.Text({
@@ -70,9 +62,9 @@ function graph(canvasid, input, conf)
             node: this.nodes[i]
         });
 
-        tip.setPosition(this.nodes[i].x - tip.getWidth()/2, this.nodes[i].y - tip.getHeight()/2); 
+        tip.setPosition(this.nodes[i].attrs.x - tip.getWidth()/2, this.nodes[i].attrs.y - tip.getHeight()/2); 
 
-        this.tipsLayer.add(tip);
+        tipsLayer.add(tip);
 
     }
        
@@ -95,12 +87,11 @@ function graph(canvasid, input, conf)
         var j;
         for (j = 0; j < numnodes; j++)
         {
-            console.log(this.nodes[j].attrs.keyword + " and " + edge.key1);
 
-            if (edge.key1 == this.nodes[j].attrs.keyword) 
+            if (edge.key1 == this.nodes[j].keyword) 
                 edge.key1 = this.nodes[j];
             
-            if (edge.key2 == this.nodes[j].attrs.keyword)
+            if (edge.key2 == this.nodes[j].keyword)
                 edge.key2 = this.nodes[j];
             
         }
@@ -113,21 +104,20 @@ function graph(canvasid, input, conf)
      
         // construct and add a visible link between the two nodes
         var link = new Kinetic.Line({
-            can: [edge.key1.x, edge.key1.y, edge.key2.x, edge.key2.y],
+            points: [{x: edge.key1.attrs.x, y: edge.key1.attrs.y}, {x: edge.key2.attrs.x, y: edge.key2.attrs.y}],
             stroke: conf.link.fresh,
             strokeWidth: conf.link.width,
         });
 
-        this.linksLayer.add(link);
+        linksLayer.add(link);
    
     }
 
     // finish up
-    this.stage.add(this.linksLayer);
-    this.stage.add(this.nodesLayer);
-    this.stage.add(this.tipsLayer);
-
-    this.render 
+    // add new layers
+    stage.add(linksLayer);
+    stage.add(nodesLayer);
+    stage.add(tipsLayer);
 
 
 }
@@ -142,22 +132,32 @@ graph.prototype.step = function ()
     var F = 0;
     var dist = 0;
     //var theta = 0;
+    var n;
+    var e;
+    var numnodes = this.nodes.length;
+    var numedges = this.edges.length;
 
     // Coloumb's Law  for each node
-    for (node in this.nodes) 
+    for (n = 0; n < numnodes; n++) 
     {
+
+        var node = this.nodes[n];
+
         node.fx = 0;
         node.fy = 0;
 
         // attempt to separate nodes using Coloumb's Law
-        for (other_node in this.nodes) 
+        var o = 0;
+        for (o = 0; o < numnodes; o++) 
         {
+            var other_node = this.nodes[o];
+
             // skip if this is the same node
             if (other_node.keyword == node.keyword) continue;
 
             // otherwise, calculate F
-            dx = node.x - other_node.x;
-            dy = node.y - other_node.y;
+            dx = node.attrs.x - other_node.attrs.x;
+            dy = node.attrs.y - other_node.attrs.y;
             //theta = Math.atan(dy/dx);
             dist = dx*dx + dy*dy;
             if (dist==0) dist = 0.001;
@@ -173,30 +173,38 @@ graph.prototype.step = function ()
     }
         
     // attempt to connect linked nodes using Hooke's Law 
-    for (edge in graph.edges)
+    for (e = 0; e < numedges; e++)
     {
+
+        var edge = this.edges[e];
 
         var u = edge.key1;
         var v = edge.key2;
+        var au = edge.key1.attrs;
+        var av = edge.key2.attrs;
 
-        u.fx += this.attraction*(u.x - v.x);
-        u.fy += this.attraction*(u.y - v.y);
-        v.fx += this.attraction*(v.x - u.x);
-        v.fx += this.attraction*(v.y - u.y);
+        u.fx -= this.attraction*(au.x - av.x);
+        u.fy -= this.attraction*(au.y - av.y);
+        v.fx -= this.attraction*(av.x - au.x);
+        v.fx -= this.attraction*(av.y - au.y);
 
     }
 
     // update each node's movement based on applied forces
-    for (n in this.nodes) {
-        
+    var n;
+    for (n = 0; n < numnodes; n++) 
+    {
+
+        var node = this.nodes[n];
+
         // skip fixed nodes
-        if (n.fixed == true) continue;
+        if (node.fixed == true) continue;
         
-        // damp node's movement
-        n.vx = (node.vx + n.fx)*this.dampening;
-        n.vy = (node.vy + n.fy)*this.dampening;        
-        n.x = node.x + node.vx;
-        n.y = node.y + node.vy;
+         // damp node's movement
+        node.vx = (node.vx + node.fx)*this.dampening;
+        node.vy = (node.vy + node.fy)*this.dampening;   
+        node.attrs.x = node.attrs.x + node.vx;
+        node.attrs.y = node.attrs.y + node.vy;
         total_energy = total_energy + (node.vx^2 * node.vy^2);
 
     }

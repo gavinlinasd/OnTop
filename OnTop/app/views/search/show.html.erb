@@ -14,35 +14,38 @@ var config = new Object();
 config.node = new Object();
 config.node.fill = new Object();
 config.node.fill.color = new Object();
-config.node.fill.color.fresh = "blue";
+config.node.fill.color.fresh = "lightskyblue";
 config.node.fill.color.visited = "red";
-config.node.radius = 20;
+config.node.radius = 30;
 config.node.stroke = new Object();
 config.node.stroke.color = new Object();
 config.node.stroke.width = 4;
-config.node.stroke.color.fresh = "blue";
+config.node.stroke.color.fresh = "royalblue";
 config.node.stroke.color.visited = "red";
 
 config.link = new Object();
 config.link.visited = "red";
-config.link.fresh = "blue";
+config.link.fresh = "royalblue";
 config.link.width = 4;
 
+// graph handle
+var g;
+// stage handle
+var stage;
 
 // canvas handle
-var disp;
-var textbox;
-var dispdiv;
+var display;
 
 // initialization
 $(document).ready(function () {
 
-    net = null;
-    dispdiv = document.getElementById("displaydiv");
-    disp = document.getElementById("display");
-
-    disp.width = dispdiv.clientWidth;
-    disp.height = dispdiv.clientHeight;
+    display = document.getElementById("display");
+    
+    stage = new Kinetic.Stage({
+        container: "display",
+        width: display.clientWidth,
+        height: display.clientHeight
+    });
 
 	// Javascript to make AJAX request
 
@@ -61,7 +64,7 @@ $(document).ready(function () {
 			dataType: "json",
 			success: function(data) {
 				// can added anything that's necessary
-				refresh(data);
+				refresh(data, stage);
 				}
 				
 		});
@@ -69,26 +72,29 @@ $(document).ready(function () {
 
 	});
 
+    $("#step").click(function () {
+        
+        g.step();
+        // print out nodes locations according to Kinetic
+        var node = stage.getChildren()[2].getChildren()[0];
+        console.log(node.attrs.x + " " + node.attrs.y);
+
+
+    });
+
 });
 
 // refresh keywords and redraw graph
 // callback function for our AJAX calls
-function refresh(data) {
+function refresh(data, s) {
 
-	console.log(data);
-    var g = graph("display", data, config);
-
-    g.nodesLayer.draw();
+    s.removeChildren();
+    g = new graph(s, data, config);
     
-    // allow the graph to settle
-	console.log(g);
-	console.log(this);
     
-
 }
 
 </script>
-
 
 
 <%# render 'searchbox' %>
@@ -96,16 +102,16 @@ function refresh(data) {
 <div id="main">
   <h1 class="center">OnTop Results</h1>
 
-  <div id="displaydiv" class="center">
-    <canvas id="display" style="border:1px solid #000000;"></canvas>
-  </div>
+  <div id="display"></div>
 
   <div id="search_box" class="center">
     <form id="search_box_form">
 	  <input type="text" id="keyword" name="keyword"/>
-	  <input type="submit" value="Search">
+	  <input type="submit" value="Search"/>
     </form>
   </div>
+
+    <input type="button" id="step" value="Step">
 
   <div id="footer" >
 
