@@ -9,8 +9,29 @@
   <%= csrf_meta_tags %>
 </head>
 <body>
+  <div id="page">
 
-<%= yield %>
+    <div id="header">
+      <div id="logo"><p>Logo</p></div>
 
+      <div id="navigation">
+        <h1>OnTop Search</h1>
+      </div>
+    </div>
+    
+    <div id="content">
+      <div id="sidebar"><p>Sidebar</p></div>
+
+      <div id="graph">
+        <p>Where the graph goes</p>
+        <%= yield %>
+      </div>
+    </div>
+
+    <div id="footer">
+      <p>Bottom of the page</p>
+    </div>
+
+  </div>
 </body>
 </html>
