@@ -1,37 +1,36 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>OnTop</title>
-  <%= stylesheet_link_tag    "application", :media => "all" %>
-  <%= javascript_include_tag "application" %>
+  <title>OnTop Search Engine</title>
+  <%= stylesheet_link_tag    "application", "bootstrap.min", :media => "all" %>
+  <%= javascript_include_tag "application", "bootstrap.min" %>
   <%= yield :script %>
 
   <%= csrf_meta_tags %>
 </head>
 <body>
-  <div id="page">
+  <div class="navbar">
+    <div class="navbar-inner">
+      <a class="brand" href="#">OnTop</a>
+      <ul class="nav">
+        <li class="active"><a href="#">Home</a></li>
+        <li><a href="#">About</a></li>
+        <li><a href="#">Feedback</a></li>
+        <li><a href="#">Contact</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="container-fluid">
+    <div class="row-fluid">
+      <div class="span3"><h1>Sidebar</h1></div>
+      <div class="span9">
 
-    <div id="header">
-      <div id="logo"><p>Logo</p></div>
+        <%= yield %>  
 
-      <div id="navigation">
-        <h1>OnTop Search</h1>
       </div>
     </div>
-    
-    <div id="content">
-      <div id="sidebar"><p>Sidebar</p></div>
-
-      <div id="graph">
-        <p>Where the graph goes</p>
-        <%= yield %>
-      </div>
-    </div>
-
-    <div id="footer">
-      <p>Bottom of the page</p>
-    </div>
-
+    <hr>
+    <footer><p>&#169 OnTop 2012</p></footer>
   </div>
 </body>
 </html>
