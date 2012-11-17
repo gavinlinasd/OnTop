@@ -1,0 +1,97 @@
+<p> Search History </p>
+<div id="history_div">
+	<div id="history_title_div">
+	</div>
+
+	<div id="history_content_div">
+	</div>
+	<button onclick="AddNewSearch('Gavin')">Add Gavin </button> 
+	<button onclick="AddNewSearch('Josh')">Add Josh</button> 
+	<button onclick="AddNewSearch('Sim')">Add Sim</button> 
+	<button onclick="AddNewNodeToSearch('Gavin','node1')">Add to Gavin</button> 
+	<button onclick="AddNewNodeToSearch('Gavin','node2')">Add to Gavin</button> 
+	<button onclick="AddNewNodeToSearch('Gavin','node3')">Add to Gavin</button> 
+	<button onclick="AddNewNodeToSearch('Gavin','node1')">Add to Gavin</button> 
+	<button onclick="AddNewNodeToSearch('Sim','node1')">Add to Sim</button> 
+	
+</div>
+
+
+<script>
+
+var history_arr = [];
+var search_count = 0;
+var content_div_name = "#history_content_div";
+
+// Class object declarition
+function NodeObj(node_id, node_name, visible) {
+	// this is the node object
+	// may include time and date later
+	this.id = node_id;
+	this.name = node_name;
+	this.visible = visible;
+
+	function toggle_visible() { this.visible = !this.visible; }
+}
+
+function SearchObj(search_id, search_name, node_list, visible) {
+	this.id = search_id;
+	this.name = search_name;
+	this.node_list = node_list;
+	this.node_visited = 0; // Allow repeat visit to the same node
+	this.visible =visible;
+
+	function toggle_visible() { this.visible = !this.visible; }
+}
+
+// User function
+// Will be called by the graph
+function AddNewSearch(search_name) {
+	if (!history_arr[search_name]) {
+		// If the search name is not undefined, add to the new search
+		var new_search = new SearchObj(search_count, search_name, [], true);
+		search_count++;
+		history_arr[search_name]=new_search;
+		//console.log(search_name);
+		AddSearchDiv(search_name);
+	}
+}
+
+function AddNewNodeToSearch(search_name, node_name) {
+	if (history_arr[search_name]) {
+		// if the search_name exists
+		var id = history_arr[search_name].node_visited++;
+		var new_node = new NodeObj(id, node_name, true);
+		// insert node into the search list
+		history_arr[search_name].node_list[node_name]=new_node;
+		AddNodeDiv(search_name,node_name);
+		//console.log(history_arr[search_name]);
+	}
+}
+
+function AddNodeDiv(search_name, node_name) {
+	var s = history_arr[search_name];
+	var s_id = "search_history_id_"+s.id;
+	var n_id = s_id+"_node_"+s.node_list[node_name].id;
+
+	$("#"+s_id).append("<div id="+n_id+"></div>");
+	$("#"+n_id).text("--"+node_name)
+			   .attr('class', 'search_history_node_entry');
+	
+}
+
+function AddSearchDiv(search_name) {
+	var s = history_arr[search_name];
+	$(content_div_name).append("<div id=search_history_id_"+s.id+"></div>");
+	$("#search_history_id_"+s.id).text(search_name)
+								 .attr('class', 'search_history_entry');
+	
+}
+function ClearSearchHistory() {
+	history_arr = [];
+	search_count = 0;
+	$(content_div_name).empty();
+}
+</script>
+
+
