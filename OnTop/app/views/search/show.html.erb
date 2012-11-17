@@ -1,125 +1,61 @@
 <% content_for :script do %>
-<%= javascript_include_tag "forcegraph", :debug =>true %>
-<%= javascript_include_tag "kinetic-v4.0.5.min.js", :debug =>true %>
+<%= javascript_include_tag "graph.js", :debug =>true %>
+<%= javascript_include_tag "d3.v2.js", :debug =>true %>
 
 <% end %>
 
 <script>
 
-
 // globals
 // configuration for our graph object
 // set constants here
-var config = new Object();
-config.node = new Object();
-config.node.fill = new Object();
-config.node.fill.color = new Object();
-config.node.fill.color.fresh = "lightskyblue";
-config.node.fill.color.visited = "tomato";
-config.node.radius = 30;
-config.node.stroke = new Object();
-config.node.stroke.color = new Object();
-config.node.stroke.width = 4;
-config.node.stroke.color.fresh = "royalblue";
-config.node.stroke.color.visited = "red";
-
-config.link = new Object();
-config.link.visited = "red";
-config.link.fresh = "royalblue";
-config.link.width = 4;
-
-// graph handle
-var g;
-// stage handle
-var stage;
-// animation handle
-var anim;
-// canvas handle
-var display;
-
-var visited = new Array();
+var graphhandle;
+var def = new Object();
+def.charge = -120;
+def.addThresh = 3;
+def.removeThresh = 4;
+def.noderadius = 15;
+def.basedist = 50;
+def.distrange = 100;
 
 // initialization
 $(document).ready(function () {
 
-    display = document.getElementById("display");
+    graphhandle = document.getElementById("graph");
+
+    def.width = parseInt(graphhandle.clientWidth);
+    def.height = parseInt(graphhandle.clientHeight);
+    def.size = [def.width, def.height];
+
+    // create a new graph
+    var g = new graph(def, "#graph", null);
+    // pass it a handmade JSON
     
-    stage = new Kinetic.Stage({
-        container: "display",
-        width: display.clientWidth,
-        height: display.clientHeight
-    });
+    var node1 = new Object();
+    node1.keyword = "node1";
+    var node2 = new Object();
+    node2.keyword = "node2";
+    var node3 = new Object();
+    node3.keyword = "node3";
+    var node4 = new Object();
+    node4.keyword = "node4";
+    
+    var test = {
+        "nodes": [ node1, node2, node3, node4],
+        "links": [
+            {"source": node1,"target": node2, "metric": 0}, 
+            {"source": node1,"target": node3, "metric": 1}, 
+            {"source": node2,"target": node3, "metric": 0.5}, 
+            {"source": node3,"target": node4, "metric": 0.5}
+        ]
+    };
 
-	// Javascript to make AJAX request
-
-	var form_name = "#search_box_form";
-
-	$(form_name).submit(function(e) {
-		// Cancel default form submission action
-		e.preventDefault();
-
-		var dataString = $(form_name).serialize();
-		// create ajax request
-		$.ajax({
-			
-			url: "<%= search_fetch_graph_path %>",
-			data: dataString,
-			dataType: "json",
-			success: function(data) {
-				// can added anything that's necessary
-				refresh(data, stage);
-				}
-				
-		});
-
-
-	});
+    g.createJSON(test, 0);
 
 });
 
-// refresh keywords and redraw graph
-// callback function for our AJAX calls
-function refresh(data, s) {
-
-    s.removeChildren();
-    g = new graph(s, data, config);
-    // fix the center node
-    g.fixNode(data.nodes[0].keyword, stage.getWidth()/2, stage.getHeight()/2);
-    g.visitNode(data.nodes[0].keyword);
-
-    // start a new animation to handle graph drawing
-    anim = new Kinetic.Animation({
-        func: function(frame) {
-            var energy = g.step(frame.timeDiff/1000);
-        },
-        node: s
-    });
-
-    anim.start();
-    
-}
-
 </script>
 
-
-<%# render 'searchbox' %>
-
-<div id="main">
-  <h1 id="head">OnTop Search Engine</h1>
-
-  <div id="display"></div>
-
-  <div id="search_box" class="center">
-    <form id="search_box_form">
-	  <input type="text" id="keyword" name="keyword"/>
-	  <input type="submit" value="Search"/>
-    </form>
-  </div>
-
-  <div id="footer" >
-
-    <div id="leftinfo"></div>
-  </div>
-</div>
+    <div id="graph"></div>
 
 
