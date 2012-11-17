@@ -22,7 +22,9 @@
   </div>
   <div class="container-fluid">
     <div class="row-fluid">
-      <div class="span3"><h1>Sidebar</h1></div>
+      <div class="span3">
+        <%= render :partial => "/search/search_history" %>
+      </div>
       <div class="span9">
 
         <%= yield %>  
