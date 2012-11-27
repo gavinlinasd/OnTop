@@ -1,3 +1,8 @@
+<div class="span3">
+  <%= render :partial => "/search/search_history" %>
+</div>
+<div class="span9">
+
 <% content_for :script do %>
 <%= javascript_include_tag "graph.js", :debug =>true %>
 <%= javascript_include_tag "d3.v2.js", :debug =>true %>
@@ -5,6 +10,8 @@
 <% end %>
 
 <script>
+
+$("#tab_search").addClass("active");
 
 // globals
 // configuration for our graph object
@@ -55,7 +62,6 @@ $(document).ready(function () {
 });
 
 </script>
-
-    <div id="graph"></div>
-
+  <div id="graph"></div>
+</div>
 

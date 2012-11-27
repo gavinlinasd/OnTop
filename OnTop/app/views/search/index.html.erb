@@ -1,6 +1,12 @@
+<script>
+  $("#tab_home").addClass("active");
+</script>
+
+
 <div class="hero-unit">
   <h1>Welcome to OnTop!</h1>
-  <p>OnTop is graphical way to explore Wikipedia and to keep track of what your viewing.</p>
+  <p>OnTop is a graphical way to explore Wikipedia and to keep track of what your viewing.</p>
+  <%= render :partial => "/search/searchbox" %>
 </div>
 
 <div class="row-fluid">
