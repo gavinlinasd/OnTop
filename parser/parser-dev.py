@@ -69,6 +69,18 @@ for event, elem in ET.iterparse(filename,events=('end',),tag=prefix+'page'):
 					if re.match("Category:", l[1])!=None:
 						category.append(l[1].encode('ascii','ignore')[9:])
 
+			# If not enough useful info, grab first 10 links
+			# in the text
+			if seealso==None or external==None:
+				links = linkmatch.findall(text.text)
+				count=0
+				for l in links:
+					category.append(l[1].encode('ascii','ignore'))
+					count+=1
+					if count==10:
+						break
+					
+
 			title_set[title]=category
 			#print category
 
