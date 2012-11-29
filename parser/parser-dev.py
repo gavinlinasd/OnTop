@@ -3,6 +3,7 @@ from lxml import etree as ET
 import sqlite3 as lite
 from datetime import datetime
 import time
+import re
 import sys
 
 # function for inserting keyword
@@ -13,30 +14,42 @@ def sql_insert(keyword):
 	print sql
 	cur.execute(sql)
 
+
+
 filename='snippet.xml'
 prefix='{http://www.mediawiki.org/xml/export-0.8/}'
+
+#bracket matching
+linkmatch=re.compile('(\[\[)([\s,\w]*?)(\]\])')
 
 # For database
 con = lite.connect('development.sqlite3')
 cur = con.cursor()
 
-title_set = set([])
+# title_set = set([])
+title_set = {}
 
 for event, elem in ET.iterparse(filename,events=('end',),tag=prefix+'page'):
 #		sql_insert(elem.text)
 
+	# finding keyword
 	title = elem.find(prefix+'title').text
 	redirect = elem.find(prefix+'redirect')
 	if redirect != None:
 		title = redirect.get('title')
 	
 	if title not in title_set:
-		title_set.add(title)
+		# matching links
+		text = elem.find(prefix+'revision').find(prefix+'text')
+		if text != None and redirect == None:
+			links = linkmatch.findall(text.text)
+			title_set[title]=links
 
-	print title
 	elem.clear()
 
 print len(title_set)
+for k,v in title_set.iteritems():
+	print k,len(v)
 print "Done updating dB"
 
 
