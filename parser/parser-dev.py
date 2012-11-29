@@ -16,11 +16,17 @@ def sql_insert(keyword):
 
 
 
-filename='snippet.xml'
+filename='snippet-1.xml'
 prefix='{http://www.mediawiki.org/xml/export-0.8/}'
+total=0;
 
 #bracket matching
-linkmatch=re.compile('(\[\[)([\s,\w]*?)(\]\])')
+linkmatch=re.compile('(\[\[)([)(\s,\w,:]*?)(\]\])')
+
+#seealsomatch=re.compile('==\s?See also==..*?==',re.DOTALL)
+seealsomatch=re.compile('==\s?See also\s?==..*?==',re.DOTALL)
+seealsomatch_1=re.compile('==\s?See also\s?==..*?\n\n',re.DOTALL)
+externalmatch=re.compile('==\s?External..*]]',re.DOTALL)
 
 # For database
 con = lite.connect('development.sqlite3')
@@ -41,17 +47,50 @@ for event, elem in ET.iterparse(filename,events=('end',),tag=prefix+'page'):
 	if title not in title_set:
 		# matching links
 		text = elem.find(prefix+'revision').find(prefix+'text')
+		category = []
 		if text != None and redirect == None:
-			links = linkmatch.findall(text.text)
-			title_set[title]=links
+
+			# Only match links inside <see also> and <category>
+			seealso = seealsomatch.search(text.text)
+			if seealso==None:
+				seealso = seealsomatch_1.search(text.text)
+			external = externalmatch.search(text.text)
+
+			# See also
+			if seealso!=None:
+				links = linkmatch.findall(seealso.group(0))
+				for l in links:
+					category.append(l[1].encode('ascii','ignore'))
+
+			# Category
+			if external!=None:
+				links = linkmatch.findall(external.group(0))
+				for l in links:
+					if re.match("Category:", l[1])!=None:
+						category.append(l[1].encode('ascii','ignore')[9:])
+
+			title_set[title]=category
+			#print category
+
 
 	elem.clear()
 
 print len(title_set)
 for k,v in title_set.iteritems():
+	total+=len(v)
 	print k,len(v)
-print "Done updating dB"
 
+print
+print "Average links: ", total/len(title_set)
+print "Done processing. Now accepting queries.."
+
+while True:
+	word = raw_input("Please enter keyword: ")
+	if word in title_set:
+		print title_set[word]
+	else:
+		print "No such keyword."
+	
 
 con.commit()
 con.close()
