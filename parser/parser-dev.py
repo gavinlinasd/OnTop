@@ -16,7 +16,7 @@ def sql_insert(keyword):
 
 
 
-filename='snippet-1.xml'
+filename='enwiki-latest-pages-articles.xml'
 prefix='{http://www.mediawiki.org/xml/export-0.8/}'
 total=0;
 
@@ -62,12 +62,15 @@ for event, elem in ET.iterparse(filename,events=('end',),tag=prefix+'page'):
 				for l in links:
 					category.append(l[1].encode('ascii','ignore'))
 
+			'''
 			# Category
 			if external!=None:
 				links = linkmatch.findall(external.group(0))
 				for l in links:
 					if re.match("Category:", l[1])!=None:
 						category.append(l[1].encode('ascii','ignore')[9:])
+			'''
+			external=None
 
 			# If not enough useful info, grab first 10 links
 			# in the text
@@ -75,15 +78,14 @@ for event, elem in ET.iterparse(filename,events=('end',),tag=prefix+'page'):
 				links = linkmatch.findall(text.text)
 				count=0
 				for l in links:
-					category.append(l[1].encode('ascii','ignore'))
-					count+=1
+					if l[1].encode('ascii','ignore') not in category:
+						category.append(l[1].encode('ascii','ignore'))
+						count+=1
 					if count==10:
 						break
 					
-
 			title_set[title]=category
 			#print category
-
 
 	elem.clear()
 
