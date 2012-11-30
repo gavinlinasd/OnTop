@@ -1,5 +1,5 @@
 class Keyword < ActiveRecord::Base
-  attr_accessible :name, :wiki_page
+  attr_accessible :name, :wiki_page, :display_name
   validates :name, :presence => true
   validates :wiki_page, :presence => true
 
