@@ -10,6 +10,7 @@ var center;
 var link;
 var node;
 var svg;
+var info;
 
 // constructor for the graph object
 // initializes the d3 force layout object and svg
@@ -23,23 +24,17 @@ function graph(config, container, controllerfunc) {
     this.getRelated = controllerfunc;
 
     layout = d3.layout.force()
-        .charge(config.charge)
-        .linkDistance(function(d) {
-
-            // compute a desired link distance from the configuration 
-            // parameters and the link metric
-            var m = 1 - d.metric;
-            return config.basedist + m*config.distrange;
-
-        })
-        .size(config.size);
+        .charge(this.conf.charge)
+        .linkDistance(this.conf.basedist)
+        .size(this.conf.size);
 
     svg = d3.select(container).append("svg")
         .attr("width", this.conf.width)
         .attr("height", this.conf.height);    
 
     // add an initially invisible info box to the graph
-
+    info = svg.append("g")
+        .attr("infobox");
 
     // add an anchor to float the graph towards
     anchor = new Object();
@@ -59,6 +54,8 @@ graph.prototype.getVisited = function() {
 // creates a graph directly from a JSON object
 // assumes the first node in the JSON object is the center
 graph.prototype.createJSON = function(json, centerindex) {
+
+    var self = this;
 
     // start the force simulation
     layout.nodes(json.nodes)
@@ -80,6 +77,10 @@ graph.prototype.createJSON = function(json, centerindex) {
     node.on("click", function(d, i) {
         d3.select(this).attr("class", "visited");
         d.visited = true;
+
+        // redraw the graph
+        self.redraw(0);
+
     });
 
     // add the circle graphic to the node
@@ -96,97 +97,189 @@ graph.prototype.createJSON = function(json, centerindex) {
     // define our tick function
     layout.on("tick", function(e) {
 
-        // move the center node towards the anchor
-        var k = e.alpha/10;
-
-        center.x += (anchor.x - center.x)*k;
-        center.y += (anchor.y - center.y)*k;
-
-        // move all the graphical elements
-        link.attr("x1", function(d) { return d.source.x; })
-            .attr("y1", function(d) { return d.source.y; })
-            .attr("x2", function(d) { return d.target.x; })
-            .attr("y2", function(d) { return d.target.y; })
-            .attr("class", function(d) {
-                
-                if (d.source.visited && d.target.visited)
-                    return "visited";
-                return "new";
-            });
-
-
-        node.attr("transform", function(d) { 
-            return "translate(" + d.x + "," + d.y + ")"; });
+        return self.redraw(e.alpha);
 
     });
 
 }
 
+// redraw function for the graph
+graph.prototype.redraw = function(k) {
+
+    center.x += (anchor.x - center.x)*k;
+    center.y += (anchor.y - center.y)*k;
+
+    // move all the graphical elements
+    link.attr("x1", function(d) { return d.source.x; })
+        .attr("y1", function(d) { return d.source.y; })
+        .attr("x2", function(d) { return d.target.x; })
+        .attr("y2", function(d) { return d.target.y; })
+        .attr("class", function(d) {
+            
+            if (d.source.visited && d.target.visited)
+                return "visited";
+            return "new";
+        });
+
+
+    node.attr("transform", function(d) { 
+        return "translate(" + d.x + "," + d.y + ")"; });
+
+
+}
+
+// 
+
+
+
 // build the graph using ajax requests
 // recursive call back function
-graph.prototype.asyncBuild = function(keyword, keep) {
+graph.prototype.asyncUpdate = function(root) {
+
+    // keyword: the normalized name for the root node
+
+    // NOTE: we expect the old node hash to contain the root node already, either because 
+    // this update was from a click, and thus the node was already in the visible graph
+    // or the update was a search, and we expect a wrapper function to have properly
+    // initialized the hash
 
     // keep a pointer to our graph
     var self = this;
 
     // initialize our variables
-    var oldhash = new Object();
-    if (keep) oldhash = this.hash;
-
+    // empty out our node hash 
+    var oldhash = this.hash;
     this.hash = new Object();
-    var keyqueue = new Array();
+
     var partial = new Object();
     partial.nodes = new Array();
     partial.links = new Array();
 
-    var root = new Object();
-    if (oldhash[keyword]) {
-        root = oldhash[keyword];
-    } else {
-        root.x = this.conf.width/2;
-        root.y = this.conf.height/2;
-        root.keyword = keyword;
-    }
-
     root.cost = 0;
     
-    keyqueue.push(root);
+    // add the root node to the nodes list
+    partial.nodes.push(root);
+
+    // wrap the root node in an array and ask the server for related entries
+    var next = new Array(root);
 
     // make a recursive call to the helper function to build the graph
-    $.ajax();
+    $.ajax({
+        url: self.conf.graphpath,
+        data: next,
+        dataType: "json",
+        success: self.asyncUpdateHelper(path, hash, self, partial)
+    });
 
 
-}
+} // end of the asyncUpdate function
 
 // used to pass our own variables into the call back
-graph.prototype.asyncBuildHelper = function(path, oldhash, newhash, queue, partial) {
+graph.prototype.asyncUpdateHelper = function(oldhash, self, partial) {
 
     return function(data) {
 
-        // we still need to remove the first item from the queue
-        var cur = queue.shift();
+        // create an array to handle the next set of keywords to lookup
+        var nextkeys = new Array();
 
         // data holds our related keywords
         // make nodes for them, if close enough
         // add them to the queue that we pass on, if new
-        
+        for (set in data) {
+
+            var key = set.source;
+
+            // pointer to the source node
+            var snode = self.hash[key];
+            var related = set;
+            
+            // target refers to the normalized keyword name
+            for (target in related) {
+                
+                // pointer to the source node
+                var tnode = null;
+                // the cost to get to the target from the source
+                var cost = source.cost + 1;
+                
+                // check if the target node already exists
+                // if so, use that
+                if (self.hash[target]) 
+                {
+                    tnode = self.hash[target];
+                    // update cost
+                    if (tnode.cost > cost)
+                        tnode.cost = cost;
+
+                    // if the node's already in this hash, then it doesn't need to be 
+                    // queried
+
+                }
+                else if (oldhash[target])
+                {
+
+                    tnode = oldhash[target];
+                    // update cost
+                    if (tnode.cost > cost)
+                        tnode.cost = cost;
+
+                    // since the node's new, add it to the query
+                    nextkeys.push(target);
 
 
+                }
+                // if the node doesn't exist and toocostly to create, skip it
+                else if (cost > self.conf.addThresh) continue;
+                // otherwise, create a new node and add it to the graph
+                else
+                {
+
+                    var nodeinfo = related[target];
+
+                    tnode = new Object();
+                    tnode.cost = cost;
+                    tnode.keyword = target;
+                    tnode.displayname = nodeinfo.displayname;
+                    tnode.x = snode.x;
+                    tnode.y = snode.y;
+
+                    // distinguish between the different types of nodes
+                    tnode.type =
+                    
+                    // save the node and add pointers to the appropriate spots
+                    self.hash[tnode.keyword] = tnode;
+                    nextkeys.push(tnode.keyword);
+                    partial.nodes.push(tnode);
+
+                }
+
+                // if we've made it this far, other points to a valid node 
+                // add a link to the partial graph
+                var link = new Object();
+                link.source = snode;
+                link.target = tnode;
+                
+                // save link
+                partial.links.push(link);
+
+            }
+
+        }
 
         // if the queue is empty, the graph is complete
         // build it
-        if (queue.length < 1)
-            createJSON(partial);
-
+        if (nextkeys.length < 1) {
+            self.createJSON(partial);
+            return;
+        }
+        
         // otherwise, pop another entry from the queue
         // and query it
-        var next = queue[0].keyword;
 
         $.ajax({
-            url: path,
+            url: self.conf.graphpath,
             data: next,
             dataType: "json",
-            success: asyncBuildHelper(path, hash, queue, partial)
+            success: self.asyncUpdateHelper(hash, self, partial)
         });
 
         // exit without returning anything, the next step of the
@@ -194,125 +287,10 @@ graph.prototype.asyncBuildHelper = function(path, oldhash, newhash, queue, parti
 
     };
 
-}
+} // end of the asyncUpdateHelper function
 
 
-// generic helper function that accepts a starting node keyword
-// and a boolean that denotes whether we should preserve the 
-// any existing nodes
-graph.prototype.update = function(startkeyword, keep) {
 
-    // save old nodes for reference
-    // this allows us to overwrite this.hash if passed in
-    var oldhash = new Object();
-    if (keep) oldhash = this.hash;
-    // create a new hash table to map keywords to node objects
-    this.hash = new Object();
-
-    var tovisit = new Array();
-    var partial = new Object();
-    partial.nodes = new Array();
-    partial.links = new Array();
-
-    var root = new Object();
-    if (oldhash[keyword]) {
-        root = oldhash[keyword];
-    } else {
-        root.x = this.conf.width/2;
-        root.y = this.conf.height/2;
-        root.keyword = keyword;
-    }
-
-    root.cost = 0;
-
-    tovisit.push(root);
-
-    // construct our graph
-    // until we run out of nodes that aren't too costly to add
-    while(tovisit.length > 1) {
-
-        // pop a node from the queue
-        var cur = tovisit.pop();
-        cur.connected = new Array();
-
-        // if our node's cost is too high, skip it
-        if (cur.cost > this.conf.addThresh) continue;
-
-        // add the node to the partial
-        partial.nodes.push(cur);
-        // save to hash
-        hash[cur.keyword] = cur;
-
-        // ask the model controller for related keywords
-        // this function should return a list of objects,
-        // each containing a metric and a keyword
-        var related = this.getRelated(cur.keyword);
-
-        // iterate through list and calculate the cost for the other node
-        // if its cost is low, add it to the tovisit queue and
-        // and add the link to our graph
-        for (conn in related) {
-
-            // holder for the connecting nodes
-            var other = null;
-            var costfromhere = cur.cost + 1;
-
-            // check if the other node already exists
-            // if so use that
-            if (this.hash[conn.keyword]) 
-            {
-                
-                other = this.hash[conn.keyword];
-                // if the cost to the node is less from here, update
-                if (other.cost > costfromhere)
-                    other.cost = costfromhere;
-
-            }
-            // next check if it's in the old hash (if we kept it)
-            else if (oldhash[conn.keyword])
-            {
-
-                other = oldhash[conn.keyword];
-                // we don't keep the cost from the old hash
-                other.cost = costfromhere;
-
-            }
-            // if the node doesn't exist and it's too costly to create, skip it
-            else if (costfromhere > this.conf.addThresh) continue;
-            // otherwise, create a new node and add it to the graph
-            else {
-                other = new Object();
-                other.cost = costfromhere;
-                other.keyword = conn.keyword;
-                other.x = Math.random()*this.conf.width;
-                other.y = Math.random()*this.conf.height;
-                
-                hash[other.keyword] = other;
-                tovisit.push(other);
-                partial.nodes.push(other);
-
-            }
-
-            // if we've made it this far, other points to a valid node 
-            // add a link to the partial graph
-            var link = new Object();
-            link.metric = conn.metric;
-            link.source = cur;
-            link.target = other;
-
-            // save the pointer to the other node
-            cur.connected.push(other);
-
-            partial.links.push(link);
-
-        }
-
-    }
-
-    // return the JSON object
-    return partial;
-
-} // end of seed function
 
 // recenters the graph on a new node and updates the graph
 // loading new nodes and dropping old nodes
@@ -321,17 +299,55 @@ graph.prototype.refocus = function(keyword) {
     // assign a new center node
     center = this.hash[keyword];
 
+    // we want to maintain the position of any previous nodes, so leave the hash intact
     // update the graph
-    var part = this.update(keyword, true);
-    this.createJSON(part);
+    this.asyncUpdate(center);
 
 }
 
 // generates a new graph using the keyword as root
-graph.prototype.seed = function(keyword) {
+graph.prototype.seed = function(query) {
 
-    var part = this.update(keyword, false);
-    this.createJSON(part);
+    var self = this;
+
+    // we don't care about any existing nodes, so empty the hash out
+    this.hash = new Object();
+
+    // asyncUpdate expects an initialized root node, so make a separate AJAX request
+    $.ajax({
+        url: self.conf.querypath,
+        data: query,
+        dataType: "json",
+        success: self.asyncQueryHelper(self);
+    });
+
+}
+
+// a helper callback function that initializes a root node from an AJAX
+// response
+// then calls the asyncUpdate function
+graph.prototype.asyncQueryHelper = function(self) {
+
+    return function(data) {
+
+        // clear out the hash
+        self.hash = new Object();
+
+        // initialize a root node using the info in data
+        var root = new Object();
+        root.x = self.conf.width/2;
+        root.y = self.conf.height/2;
+        root.displayname = data.displayname;
+        root.keyword = data.name;
+
+        // add it to the hash
+        self.hash[root.keyword] = root;
+
+        // start the cascading AJAX calls needed to fill the graph
+        self.asyncUpdate(root);
+
+    }
+
 
 }
 
@@ -343,7 +359,7 @@ function openwiki(keyword) {
 
 }
 
-// opens the info box for the given node
+// updates and opens the info box for the given node
 function openinfobox(node) {
 
 
@@ -352,9 +368,9 @@ function openinfobox(node) {
 
 }
 
+// 
 function closeinfobox() {
 
-    // hide the info box
 
 
 }
