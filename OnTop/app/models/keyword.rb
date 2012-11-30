@@ -4,6 +4,7 @@ class Keyword < ActiveRecord::Base
   validates :wiki_page, :presence => true
 
   has_and_belongs_to_many :webpages
+  has_and_belongs_to_many :categories
 
   has_many :friendships, 
            :foreign_key => "keyword_id", 

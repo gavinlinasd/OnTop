@@ -11,7 +11,18 @@
 #
 # It's strongly recommended to check this file into your version control system.
 
-ActiveRecord::Schema.define(:version => 20121030012414) do
+ActiveRecord::Schema.define(:version => 20121130204935) do
+
+  create_table "categories", :force => true do |t|
+    t.string   "name"
+    t.datetime "created_at", :null => false
+    t.datetime "updated_at", :null => false
+  end
+
+  create_table "categories_keywords", :id => false, :force => true do |t|
+    t.integer "category_id"
+    t.integer "keyword_id"
+  end
 
   create_table "friendships", :force => true do |t|
     t.integer  "keyword_id"
@@ -24,8 +35,9 @@ ActiveRecord::Schema.define(:version => 20121030012414) do
   create_table "keywords", :force => true do |t|
     t.string   "name"
     t.string   "wiki_page"
-    t.datetime "created_at", :null => false
-    t.datetime "updated_at", :null => false
+    t.datetime "created_at",   :null => false
+    t.datetime "updated_at",   :null => false
+    t.string   "display_name"
   end
 
   create_table "keywords_webpages", :id => false, :force => true do |t|
