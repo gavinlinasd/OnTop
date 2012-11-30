@@ -36,15 +36,11 @@ $(document).ready(function () {
     var g = new graph(def, "#graph", null);
     // pass it a handmade JSON
     
-    var node1 = new Object();
-    node1.keyword = "node1";
-    var node2 = new Object();
-    node2.keyword = "node2";
-    var node3 = new Object();
-    node3.keyword = "node3";
-    var node4 = new Object();
-    node4.keyword = "node4";
-    
+    var node1 = {"keyword": "node1", "visited": false};
+    var node2 = {"keyword": "node2", "visited": false};
+    var node3 = {"keyword": "node3", "visited": false};
+    var node4 = {"keyword": "node4", "visited": false};
+
     var test = {
         "nodes": [ node1, node2, node3, node4],
         "links": [

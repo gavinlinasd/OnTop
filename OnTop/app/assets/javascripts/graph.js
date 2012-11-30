@@ -18,6 +18,7 @@ var svg;
 // keywwords and the corresponding metrics
 function graph(config, container, controllerfunc) {
 
+    this.visited = new Array();
     this.conf = config;
     this.getRelated = controllerfunc;
 
@@ -25,8 +26,8 @@ function graph(config, container, controllerfunc) {
         .charge(config.charge)
         .linkDistance(function(d) {
 
-            // compute a desired link distance from the configuration parameters and
-            // the link metric
+            // compute a desired link distance from the configuration 
+            // parameters and the link metric
             var m = 1 - d.metric;
             return config.basedist + m*config.distrange;
 
@@ -37,10 +38,22 @@ function graph(config, container, controllerfunc) {
         .attr("width", this.conf.width)
         .attr("height", this.conf.height);    
 
+    // add an initially invisible info box to the graph
+
+
+    // add an anchor to float the graph towards
     anchor = new Object();
     anchor.x = this.conf.width/2;
     anchor.y = this.conf.height/2;
 
+}
+
+graph.prototype.setVisited = function(v) {
+    this.visited = v;
+}
+
+graph.prototype.getVisited = function() {
+    return this.visited;
 }
 
 // creates a graph directly from a JSON object
@@ -61,9 +74,13 @@ graph.prototype.createJSON = function(json, centerindex) {
     node = svg.selectAll("circle.node")
         .data(json.nodes)
         .enter().append("g")
-        .attr("class", "node")
-        .attr("class", "new")
-        .call(layout.drag);
+        .attr("class", "new");
+
+    // add on click listeners
+    node.on("click", function(d, i) {
+        d3.select(this).attr("class", "visited");
+        d.visited = true;
+    });
 
     // add the circle graphic to the node
     node.append("circle")
@@ -89,14 +106,96 @@ graph.prototype.createJSON = function(json, centerindex) {
         link.attr("x1", function(d) { return d.source.x; })
             .attr("y1", function(d) { return d.source.y; })
             .attr("x2", function(d) { return d.target.x; })
-            .attr("y2", function(d) { return d.target.y; });
-    
+            .attr("y2", function(d) { return d.target.y; })
+            .attr("class", function(d) {
+                
+                if (d.source.visited && d.target.visited)
+                    return "visited";
+                return "new";
+            });
+
+
         node.attr("transform", function(d) { 
             return "translate(" + d.x + "," + d.y + ")"; });
 
     });
 
 }
+
+// build the graph using ajax requests
+// recursive call back function
+graph.prototype.asyncBuild = function(keyword, keep) {
+
+    // keep a pointer to our graph
+    var self = this;
+
+    // initialize our variables
+    var oldhash = new Object();
+    if (keep) oldhash = this.hash;
+
+    this.hash = new Object();
+    var keyqueue = new Array();
+    var partial = new Object();
+    partial.nodes = new Array();
+    partial.links = new Array();
+
+    var root = new Object();
+    if (oldhash[keyword]) {
+        root = oldhash[keyword];
+    } else {
+        root.x = this.conf.width/2;
+        root.y = this.conf.height/2;
+        root.keyword = keyword;
+    }
+
+    root.cost = 0;
+    
+    keyqueue.push(root);
+
+    // make a recursive call to the helper function to build the graph
+    $.ajax();
+
+
+}
+
+// used to pass our own variables into the call back
+graph.prototype.asyncBuildHelper = function(path, oldhash, newhash, queue, partial) {
+
+    return function(data) {
+
+        // we still need to remove the first item from the queue
+        var cur = queue.shift();
+
+        // data holds our related keywords
+        // make nodes for them, if close enough
+        // add them to the queue that we pass on, if new
+        
+
+
+
+        // if the queue is empty, the graph is complete
+        // build it
+        if (queue.length < 1)
+            createJSON(partial);
+
+        // otherwise, pop another entry from the queue
+        // and query it
+        var next = queue[0].keyword;
+
+        $.ajax({
+            url: path,
+            data: next,
+            dataType: "json",
+            success: asyncBuildHelper(path, hash, queue, partial)
+        });
+
+        // exit without returning anything, the next step of the
+        // algorithm will continue in the ajax callback
+
+    };
+
+}
+
 
 // generic helper function that accepts a starting node keyword
 // and a boolean that denotes whether we should preserve the 
@@ -116,11 +215,15 @@ graph.prototype.update = function(startkeyword, keep) {
     partial.links = new Array();
 
     var root = new Object();
-    root.x = this.conf.width/2;
-    root.y = this.conf.height/2;
+    if (oldhash[keyword]) {
+        root = oldhash[keyword];
+    } else {
+        root.x = this.conf.width/2;
+        root.y = this.conf.height/2;
+        root.keyword = keyword;
+    }
+
     root.cost = 0;
-    cur.connected = new Array();
-    root.keyword = keyword;
 
     tovisit.push(root);
 
@@ -130,7 +233,8 @@ graph.prototype.update = function(startkeyword, keep) {
 
         // pop a node from the queue
         var cur = tovisit.pop();
-        
+        cur.connected = new Array();
+
         // if our node's cost is too high, skip it
         if (cur.cost > this.conf.addThresh) continue;
 
@@ -144,8 +248,8 @@ graph.prototype.update = function(startkeyword, keep) {
         // each containing a metric and a keyword
         var related = this.getRelated(cur.keyword);
 
-        // now iterate through the list and calculate the cost for the other node
-        // if its cost is below the add threshold, add it to the tovisit queue and
+        // iterate through list and calculate the cost for the other node
+        // if its cost is low, add it to the tovisit queue and
         // and add the link to our graph
         for (conn in related) {
 
@@ -253,9 +357,4 @@ function closeinfobox() {
     // hide the info box
 
 
-}
-
-// marks that we've visited said node by changing its color
-function visitnode(node) {
-    
 }

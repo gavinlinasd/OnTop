@@ -21,7 +21,7 @@ line.new {
 
 .visited circle {
     stroke: #FE2E2E;
-    fill: FA5858;
+    fill: #FA5858;
 }
 
 .new circle {
