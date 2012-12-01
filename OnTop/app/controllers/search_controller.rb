@@ -23,9 +23,9 @@ class SearchController < ApplicationController
   	@keyword = params[:keyword]
 
 	if @keyword==nil
-		@result = Keyword.all
+		@result = nil # Not found
 	else
-		@result = Keyword.find_by_name(@keyword)
+		@result = Keyword.find_by_name(@keyword.downcase)
 	end
 
 	# Return in the format of JSON object
@@ -38,56 +38,43 @@ class SearchController < ApplicationController
   def fetch_graph_data
 	# Fetch the graph data to feed the Canvas
 
-  	@keyword = params[:keyword]
-	if Keyword.find_by_name(@keyword)==nil
-		@result = []
-	else
-		# get the key and its friends
-		@key = Keyword.find_by_name(@keyword)
-		@friends = @key.friends
-		@nodes = [{:keyword => @key.name}]
+	# It will take in a list of keywords
+  	keywords = params[:keyword]
 
-		# parse into the right format
+	@result_list=[]
+	for @keyword in keywords
 
-		@friends.each do |f|
-			@nodes += [{:keyword => f.name}]
-		end
+		if Keyword.find_by_name(@keyword)==nil
+			# Keyword not found
+			@result = {:source => @keyword, :targets => [], :categories => [] }
+		else
+			# get the key and its friends
+			@key = Keyword.find_by_name(@keyword)
+			@friends = @key.friends
 
-		@edges = []
-		# Generate random data for now
-		for i in (0..@nodes.size-1)
-			for j in (0..@nodes.size-1)
-				if i<j
-					@edges += [{:key1 => @nodes[i][:keyword], :key2 => @nodes[j][:keyword], :metric => rand }]
-				end
+			# parse into the right format
+			@friend_info = []
+			@friends.each do |f|
+				@friend_info += [{:name => f.name, :display_name => f.display_name, :categories => f.categories}]
 			end
+
+			@result = { :source => @keyword, :targets => @friend_info, :categories => @key.categories }
 		end
-
-		@result = { :nodes => @nodes, :edges => @edges }
-
+		@result_list += [@result]
 	end
 
 	# Return in the format of JSON object
 	respond_to do |format|
-		format.json { render :json => @result }
+		format.json { render :json => @result_list }
 	end
 
-
   end
 
-
-  def fetch_friendship_by_keyword_pairs
-  	##### Deprecated method #####
-  	# Get the friendship status between two keywords
-
-	@key1 = parames[:key1]
-	@key2 = parames[:key2]
-
-  end
 
   def fetch_page_by_keyword
 	# Will fetch related info to the keyword (related pages)
 	# For now it wpill only fetch the wiki page
+	# Currently Deprecated
 
   	@keyword = params[:keyword]
 
