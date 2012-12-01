@@ -1,0 +1,27 @@
+<div class="span12">
+<p id="notice"><%= notice %></p>
+
+<p>
+  <b>Name:</b>
+  <%= @ticket.name %>
+</p>
+
+<p>
+  <b>Email:</b>
+  <%= @ticket.email %>
+</p>
+
+<p>
+  <b>Subject:</b>
+  <%= @ticket.subject %>
+</p>
+
+<p>
+  <b>Body:</b>
+  <%= @ticket.body %>
+</p>
+
+
+<%= link_to 'Edit', edit_ticket_path(@ticket) %> |
+<%= link_to 'Home', search_path %>
+</div>
