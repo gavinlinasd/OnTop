@@ -2,62 +2,10 @@
   <%= render :partial => "/search/search_history" %>
 </div>
 <div class="span9">
-
-<% content_for :script do %>
-<%= javascript_include_tag "graph.js", :debug =>true %>
-<%= javascript_include_tag "d3.v2.js", :debug =>true %>
-
-<% end %>
+  <%= render :partial => "/search/graph" %>
+</div>
 
 <script>
-
-$("#tab_search").addClass("active");
-
-// globals
-// configuration for our graph object
-// set constants here
-var graphhandle;
-var def = new Object();
-def.charge = -120;
-def.addThresh = 3;
-def.removeThresh = 4;
-def.noderadius = 15;
-def.basedist = 50;
-def.distrange = 100;
-
-// initialization
-$(document).ready(function () {
-
-    graphhandle = document.getElementById("graph");
-
-    def.width = parseInt(graphhandle.clientWidth);
-    def.height = parseInt(graphhandle.clientHeight);
-    def.size = [def.width, def.height];
-
-    // create a new graph
-    var g = new graph(def, "#graph", null);
-    // pass it a handmade JSON
-    
-    var node1 = {"keyword": "node1", "visited": false};
-    var node2 = {"keyword": "node2", "visited": false};
-    var node3 = {"keyword": "node3", "visited": false};
-    var node4 = {"keyword": "node4", "visited": false};
-
-    var test = {
-        "nodes": [ node1, node2, node3, node4],
-        "links": [
-            {"source": node1,"target": node2, "metric": 0}, 
-            {"source": node1,"target": node3, "metric": 1}, 
-            {"source": node2,"target": node3, "metric": 0.5}, 
-            {"source": node3,"target": node4, "metric": 0.5}
-        ]
-    };
-
-    g.createJSON(test, 0);
-
-});
-
+  $("#tab_search").addClass("active");
 </script>
-  <div id="graph"></div>
-</div>
 

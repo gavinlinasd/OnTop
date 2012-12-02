@@ -34,7 +34,8 @@ function graph(config, container, controllerfunc) {
 
     // add an initially invisible info box to the graph
     info = svg.append("g")
-        .attr("infobox");
+        .attr("class", "tooltip")
+        .attr("id", "infobox");
 
     // add an anchor to float the graph towards
     anchor = new Object();
@@ -101,6 +102,13 @@ graph.prototype.createJSON = function(json, centerindex) {
 
     });
 
+    // finally, make sure the graph is visible
+    // make sure that the graph is visible
+    $("#graph").show("slow", function showNext() {
+        $(this).next().show("fast", showNext);
+    });
+
+
 }
 
 // redraw function for the graph
@@ -157,18 +165,22 @@ graph.prototype.asyncUpdate = function(root) {
 
     root.cost = 0;
     
+    this.hash[root.keyword] = root;
+
     // add the root node to the nodes list
     partial.nodes.push(root);
 
     // wrap the root node in an array and ask the server for related entries
-    var next = new Array(root);
+    var nextkeys = new Array(root.keyword);
+
+    
 
     // make a recursive call to the helper function to build the graph
     $.ajax({
         url: self.conf.graphpath,
-        data: next,
+        data: {"keyword": nextkeys},
         dataType: "json",
-        success: self.asyncUpdateHelper(path, hash, self, partial)
+        success: self.asyncUpdateHelper(oldhash, self, partial)
     });
 
 
@@ -179,33 +191,46 @@ graph.prototype.asyncUpdateHelper = function(oldhash, self, partial) {
 
     return function(data) {
 
+        // if we received null data, then all the keywords were not in the database
+        // alert and return
+        if (data == null) {
+            alert("Graph fetch missed.");
+            return;
+        }
+
         // create an array to handle the next set of keywords to lookup
         var nextkeys = new Array();
 
         // data holds our related keywords
         // make nodes for them, if close enough
         // add them to the queue that we pass on, if new
-        for (set in data) {
+        var numsets = data.length;
 
+        for (var s = 0; s < numsets; s++) {
+
+            var set = data[s];
             var key = set.source;
+            var targets = set.targets;
 
             // pointer to the source node
             var snode = self.hash[key];
-            var related = set;
-            
+              
             // target refers to the normalized keyword name
-            for (target in related) {
+            var numtargets = targets.length;
+            for (var t = 0; t < numtargets; t++) {
                 
+                var target = targets[t];
+
                 // pointer to the source node
                 var tnode = null;
                 // the cost to get to the target from the source
-                var cost = source.cost + 1;
+                var cost = snode.cost + 1;
                 
                 // check if the target node already exists
                 // if so, use that
-                if (self.hash[target]) 
+                if (self.hash[target.name]) 
                 {
-                    tnode = self.hash[target];
+                    tnode = self.hash[target.name];
                     // update cost
                     if (tnode.cost > cost)
                         tnode.cost = cost;
@@ -214,16 +239,16 @@ graph.prototype.asyncUpdateHelper = function(oldhash, self, partial) {
                     // queried
 
                 }
-                else if (oldhash[target])
+                else if (oldhash[target.name])
                 {
 
-                    tnode = oldhash[target];
+                    tnode = oldhash[target.name];
                     // update cost
                     if (tnode.cost > cost)
                         tnode.cost = cost;
 
                     // since the node's new, add it to the query
-                    nextkeys.push(target);
+                    nextkeys.push(target.name);
 
 
                 }
@@ -233,17 +258,15 @@ graph.prototype.asyncUpdateHelper = function(oldhash, self, partial) {
                 else
                 {
 
-                    var nodeinfo = related[target];
-
                     tnode = new Object();
                     tnode.cost = cost;
-                    tnode.keyword = target;
-                    tnode.displayname = nodeinfo.displayname;
+                    tnode.keyword = target.name;
+                    tnode.display_name = target.display_name;
                     tnode.x = snode.x;
                     tnode.y = snode.y;
 
                     // distinguish between the different types of nodes
-                    tnode.type =
+                    tnode.type = "fresh";
                     
                     // save the node and add pointers to the appropriate spots
                     self.hash[tnode.keyword] = tnode;
@@ -268,7 +291,7 @@ graph.prototype.asyncUpdateHelper = function(oldhash, self, partial) {
         // if the queue is empty, the graph is complete
         // build it
         if (nextkeys.length < 1) {
-            self.createJSON(partial);
+            self.createJSON(partial, 0);
             return;
         }
         
@@ -277,9 +300,9 @@ graph.prototype.asyncUpdateHelper = function(oldhash, self, partial) {
 
         $.ajax({
             url: self.conf.graphpath,
-            data: next,
+            data: {"keyword" : nextkeys},
             dataType: "json",
-            success: self.asyncUpdateHelper(hash, self, partial)
+            success: self.asyncUpdateHelper(oldhash, self, partial)
         });
 
         // exit without returning anything, the next step of the
@@ -316,9 +339,12 @@ graph.prototype.seed = function(query) {
     // asyncUpdate expects an initialized root node, so make a separate AJAX request
     $.ajax({
         url: self.conf.querypath,
-        data: query,
+        data: {"keyword": query},
         dataType: "json",
-        success: self.asyncQueryHelper(self);
+        success: self.asyncQueryHelper(self),
+        error: function(xhr, status, error) {
+            alert("Error connecting to database.");
+        }
     });
 
 }
@@ -330,6 +356,13 @@ graph.prototype.asyncQueryHelper = function(self) {
 
     return function(data) {
 
+        // if the server returns nothing, then the entry doesn't exist
+        // alert and leave everything alone
+        if (data == null) {
+            alert("Search query not found.");
+            return;
+        }
+
         // clear out the hash
         self.hash = new Object();
 
@@ -337,7 +370,7 @@ graph.prototype.asyncQueryHelper = function(self) {
         var root = new Object();
         root.x = self.conf.width/2;
         root.y = self.conf.height/2;
-        root.displayname = data.displayname;
+        root.display_name = data.display_name;
         root.keyword = data.name;
 
         // add it to the hash

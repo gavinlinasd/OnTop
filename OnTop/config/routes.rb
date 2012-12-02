@@ -20,9 +20,9 @@ OnTop::Application.routes.draw do
   match 'search' => 'search#index', :as => 'search'
   match 'search/show' => 'search#show'
   # functional actions, will only turn in JSON form
-  match 'search/fetch_key' => 'search#fetch_by_keyword' 
+  match 'search/fetch_key' => 'search#fetch_by_keyword',  :as => 'fetch_key'
   match 'search/fetch_page' => 'search#fetch_page_by_keyword'
-  match 'search/fetch_graph' => 'search#fetch_graph_data' 
+  match 'search/fetch_graph' => 'search#fetch_graph_data', :as => 'fetch_graph'
 
 
   # The priority is based upon order of creation:
