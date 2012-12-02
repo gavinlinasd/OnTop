@@ -12,6 +12,10 @@ var node;
 var svg;
 var info;
 
+// visited is a global hash table for storing the long term state for nodes
+// either fresh, visited, or searched
+var visited = new Object();
+
 // constructor for the graph object
 // initializes the d3 force layout object and svg
 // controllerfunc is a function that accepts a single
@@ -19,14 +23,14 @@ var info;
 // keywwords and the corresponding metrics
 function graph(config, container, controllerfunc) {
 
-    this.visited = new Array();
     this.conf = config;
     this.getRelated = controllerfunc;
 
     layout = d3.layout.force()
         .charge(this.conf.charge)
         .linkDistance(this.conf.basedist)
-        .size(this.conf.size);
+        .size(this.conf.size)
+        .gravity(this.conf.gravity);
 
     svg = d3.select(container).append("svg")
         .attr("width", this.conf.width)
@@ -44,14 +48,6 @@ function graph(config, container, controllerfunc) {
 
 }
 
-graph.prototype.setVisited = function(v) {
-    this.visited = v;
-}
-
-graph.prototype.getVisited = function() {
-    return this.visited;
-}
-
 // creates a graph directly from a JSON object
 // assumes the first node in the JSON object is the center
 graph.prototype.createJSON = function(json, centerindex) {
@@ -67,22 +63,49 @@ graph.prototype.createJSON = function(json, centerindex) {
         .data(json.links)
         .enter().append("line")
         .attr("class", "link")
-        .attr("class", "new");
+        .attr("class", function(d) {
+
+            if (visited[d.source.keyword] == "searched") {
+
+                if (visited[d.target.keyword] == "searched")
+                    return "searched";
+                else if (visited[d.target.keyword] == "visited")
+                    return "visited";
+                
+
+            } else if (visited[d.source.keyword] == "visited") {
+
+                if (visited[d.target.keyword] == "searched")
+                    return "visited";
+                else if (visited[d.target.keyword] == "visited")
+                    return "visited";
+                               
+            }
+
+            return "new";
+
+        });
 
     node = svg.selectAll("circle.node")
         .data(json.nodes)
         .enter().append("g")
-        .attr("class", "new");
+        .attr("class", function(d) {
+
+            // look to the visited hash
+            return visited[d.keyword];
+
+        });
 
     // add on click listeners
     node.on("click", function(d, i) {
-        d3.select(this).attr("class", "visited");
-        d.visited = true;
+        
+        if (visited[d.keyword] != "searched") {
+            d3.select(this).attr("class", "visited");
+            visited[d.keyword] = "visited";
+        }
 
-        // 
-
-        // redraw the graph
-        self.redraw(0);
+        // refocus the graph
+        self.refocus(d.keyword);
 
     });
 
@@ -93,7 +116,7 @@ graph.prototype.createJSON = function(json, centerindex) {
     // create the text that overlays each node
     node.append("text")
         .attr("text-anchor", "middle")
-        .text(function(d) { return d.keyword });
+        .text(function(d) { return d.display_name });
 
     center = node[0][centerindex];
     
@@ -106,9 +129,9 @@ graph.prototype.createJSON = function(json, centerindex) {
 
     // finally, make sure the graph is visible
     // make sure that the graph is visible
-    $("#graph").show("slow", function showNext() {
-        $(this).next().show("fast", showNext);
-    });
+    //$("#graph").show("slow", function showNext() {
+    //    $(this).next().show("fast", showNext);
+    //});
 
 
 }
@@ -123,13 +146,7 @@ graph.prototype.redraw = function(k) {
     link.attr("x1", function(d) { return d.source.x; })
         .attr("y1", function(d) { return d.source.y; })
         .attr("x2", function(d) { return d.target.x; })
-        .attr("y2", function(d) { return d.target.y; })
-        .attr("class", function(d) {
-            
-            if (d.source.visited && d.target.visited)
-                return "visited";
-            return "new";
-        });
+        .attr("y2", function(d) { return d.target.y; });
 
 
     node.attr("transform", function(d) { 
@@ -214,6 +231,8 @@ graph.prototype.asyncUpdateHelper = function(oldhash, self, partial) {
             var key = set.source;
             var targets = set.targets;
 
+            console.log(key);
+
             // pointer to the source node
             var snode = self.hash[key];
               
@@ -268,7 +287,8 @@ graph.prototype.asyncUpdateHelper = function(oldhash, self, partial) {
                     tnode.y = snode.y;
 
                     // distinguish between the different types of nodes
-                    tnode.type = "fresh";
+                    if (visited[tnode] == null) 
+                        visited[tnode.keyword] = "new";
                     
                     // save the node and add pointers to the appropriate spots
                     self.hash[tnode.keyword] = tnode;
@@ -323,6 +343,10 @@ graph.prototype.refocus = function(keyword) {
 
     // assign a new center node
     center = this.hash[keyword];
+    
+    // upgrade the node to visited, if it's fresh
+    if (visited[center.keyword] != "searched")
+        visited[center.keyword] = "visited";
 
     // we want to maintain the position of any previous nodes, so leave the hash intact
     // update the graph
@@ -374,6 +398,9 @@ graph.prototype.asyncQueryHelper = function(self) {
         root.y = self.conf.height/2;
         root.display_name = data.display_name;
         root.keyword = data.name;
+
+        // remember that we searched this
+        visited[root.keyword] = "searched";
 
         // add it to the hash
         self.hash[root.keyword] = root;
