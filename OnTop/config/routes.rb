@@ -1,5 +1,7 @@
 OnTop::Application.routes.draw do
 
+  resources :tickets
+
   get "static_pages/about"
 
   get "static_pages/feedback"
@@ -7,7 +9,7 @@ OnTop::Application.routes.draw do
   get "static_pages/contact"
 
   match 'about' => 'static_pages#about', :as => 'about'
-  match 'feedback' => 'static_pages#feedback', :as => 'feedback'
+  match 'feedback' => 'tickets#new', :as => 'feedback'
   match 'contact' => 'static_pages#contact', :as => 'contact'
 
   # You can have the root of your site routed with "root"
