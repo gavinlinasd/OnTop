@@ -6,9 +6,15 @@ import time
 import re
 import sys
 
+
 # For database
-con = lite.connect('development.sqlite3')
+con = lite.connect('test.sqlite3')
 cur = con.cursor()
+
+# General global
+filename='snippet.xml'
+prefix='{http://www.mediawiki.org/xml/export-0.8/}'
+
 
 
 ################## SQL Operations ##################
@@ -17,7 +23,8 @@ def keyword_insert(keyword):
 	# function for inserting keyword
 	sql='INSERT INTO "keywords" ("created_at", "updated_at", "name", "display_name",  "wiki_page") VALUES (?, ?, ?, ?, ?)'
 	timestamp = time.mktime(datetime.now().timetuple()) # timestamp
-	page = "http://en.wikipedia.org/wiki/"+keyword.replace(' ','_') # construct wikipage
+	# page = "http://en.wikipedia.org/wiki/"+keyword.replace(' ','_') # construct wikipage
+	page = ""
 	cur.execute(sql, (timestamp, timestamp, keyword.lower(), keyword, page))
 	con.commit()
 
@@ -54,25 +61,39 @@ def keyword_befriend(k1_id, friend):
 
 	timestamp = time.mktime(datetime.now().timetuple()) # timestamp
 	sql = 'INSERT INTO "friendships" ("created_at", "friend_id", "keyword_id", "updated_at") VALUES (?, ?, ?, ?)'
-	#print k1_id, k2_id
+	print k1_id, k2_id
 	cur.execute(sql, (timestamp, k2_id, k1_id, timestamp))
 	cur.execute(sql, (timestamp, k1_id, k2_id, timestamp))
 	con.commit()
 
 
 def category_insert(name):
-	# TODO: check in category table and insert
-	pass
+	# check for category existense
+	# return the entry of the category
+	sql = 'SELECT "categories".* FROM "categories" WHERE "categories"."name" = ? LIMIT 1'
+	cur.execute(sql, [name])
+	category = cur.fetchone()
+	# insert if not yet exist
+	if category == None:
+		timestamp = time.mktime(datetime.now().timetuple()) # timestamp
+		insert = 'INSERT INTO "categories" ("created_at", "name", "updated_at") VALUES (?, ?, ?)'
+		cur.execute(insert, (timestamp, name, timestamp))
+		cur.execute(sql, [name])
+		category = cur.fetchone()
+	
+	return category
+		
 
-def keyword_category(keyword, category_name):
-	# TODO: bind keyword and category
-	pass
+def keyword_category(kid, category_name):
+	# bind keyword and category
+	c = category_insert(category_name)
+	sql = 'INSERT INTO "categories_keywords" ("keyword_id", "category_id") VALUES (?, ?)'
+	cur.execute(sql, (kid, c[0]))
+	con.commit()
+
+
 
 #########################################################
-
-# General global
-filename='sample.xml'
-prefix='{http://www.mediawiki.org/xml/export-0.8/}'
 
 # regex matching (link, seealso, categories)
 linkmatch=re.compile('(\[\[)([)(\s,\w,:]*?)(\]\])')
@@ -132,16 +153,17 @@ for event, elem in ET.iterparse(filename,events=('end',),tag=prefix+'page'):
 				if count==10:
 					break
 	
-			'''
 			external = externalmatch.search(text.text)
-			# Category
+			# Get category info 
 			if external!=None:
 				links = linkmatch.findall(external.group(0))
 				for l in links:
 					if re.match("Category:", l[1])!=None:
 						category.append(l[1].encode('ascii','ignore')[9:])
-			external=None
-			'''
+
+			# import category info and bind keyword
+			for c in category:
+				keyword_category(key[0], c)
 
 		for f in related:
 			# Adding friendship 
