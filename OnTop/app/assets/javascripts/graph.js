@@ -79,6 +79,8 @@ graph.prototype.createJSON = function(json, centerindex) {
         d3.select(this).attr("class", "visited");
         d.visited = true;
 
+        // 
+
         // redraw the graph
         self.redraw(0);
 
