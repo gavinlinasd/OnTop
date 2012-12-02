@@ -3,40 +3,139 @@ from lxml import etree as ET
 import sqlite3 as lite
 from datetime import datetime
 import time
+import re
 import sys
-
-# function for inserting keyword
-def sql_insert(keyword):
-	insert_keyword = 'INSERT INTO "keywords" ("created_at", "name", "updated_at", "wiki_page") VALUES '
-	timestamp = time.mktime(datetime.now().timetuple()) # timestamp
-	sql = insert_keyword +'(%s, %s, %s, %s)' % (timestamp , '"'+keyword+'"', timestamp, '"randomepage"')
-	print sql
-	cur.execute(sql)
-
-filename='snippet.xml'
-prefix='{http://www.mediawiki.org/xml/export-0.8/}'
 
 # For database
 con = lite.connect('development.sqlite3')
 cur = con.cursor()
 
-title_set = set([])
+
+################## SQL Operations ##################
+
+def keyword_insert(keyword):
+	# function for inserting keyword
+	sql='INSERT INTO "keywords" ("created_at", "updated_at", "name", "display_name",  "wiki_page") VALUES (?, ?, ?, ?, ?)'
+	timestamp = time.mktime(datetime.now().timetuple()) # timestamp
+	page = "http://en.wikipedia.org/wiki/"+keyword.replace(' ','_') # construct wikipage
+	cur.execute(sql, (timestamp, timestamp, keyword.lower(), keyword, page))
+	con.commit()
+
+def keyword_query(keyword):
+	# check for the existence of the keyword
+	# keyword are not guarentee to be normalized before calling
+	sql = 'SELECT "keywords".* FROM "keywords" WHERE "keywords"."name"= ? LIMIT 1'
+	cur.execute(sql,[keyword.lower()])
+	return cur.fetchone()
+
+def keyword_befriend(keyword, friend):
+	k1 = keyword_query(keyword)
+	k2 = keyword_query(friend)
+	#check if friend exist in keyword already, if not insert it
+	if k2==None:
+		keyword_insert(friend)
+		k2 = keyword_query(friend)
+	
+	timestamp = time.mktime(datetime.now().timetuple()) # timestamp
+	sql = 'INSERT INTO "friendships" ("created_at", "friend_id", "keyword_id", "updated_at") VALUES (?, ?, ?, ?)'
+	print k2[0], k1[0]
+	cur.execute(sql, (timestamp, k2[0], k1[0], timestamp))
+	cur.execute(sql, (timestamp, k1[0], k2[0], timestamp))
+	con.commit()
+
+
+def category_insert(name):
+	# TODO: check in category table and insert
+	pass
+
+def keyword_category(keyword, category_name):
+	# TODO: bind keyword and category
+	pass
+
+#########################################################
+
+# General global
+filename='snippet.xml'
+prefix='{http://www.mediawiki.org/xml/export-0.8/}'
+
+# regex matching (link, seealso, categories)
+linkmatch=re.compile('(\[\[)([)(\s,\w,:]*?)(\]\])')
+seealsomatch=re.compile('==\s?See also\s?==..*?==',re.DOTALL)
+seealsomatch_1=re.compile('==\s?See also\s?==..*?\n\n',re.DOTALL)
+externalmatch=re.compile('==\s?External..*]]',re.DOTALL)
 
 for event, elem in ET.iterparse(filename,events=('end',),tag=prefix+'page'):
-#		sql_insert(elem.text)
 
+	# finding keyword
 	title = elem.find(prefix+'title').text
 	redirect = elem.find(prefix+'redirect')
-	if redirect != None:
-		title = redirect.get('title')
-	
-	if title not in title_set:
-		title_set.add(title)
 
-	print title
+
+	# check title in the database
+	key=keyword_query(title)
+
+	# Key not yet exist in table, then extract links and update table
+	if key==None:
+		# first insert key into database
+		keyword_insert(title)
+		key=keyword_query(title)
+	
+	if key!=None:
+
+		# find text
+		text = elem.find(prefix+'revision').find(prefix+'text')
+		related = []
+		category = []
+
+		# if redirect exists, it will be the only related keyword
+		if redirect !=None:
+			related.append(redirect.get('title'))
+
+		if text != None and redirect == None:
+			
+			# Only match links inside <see also> and first 10 link
+			seealso = seealsomatch.search(text.text)
+			if seealso==None:
+				seealso = seealsomatch_1.search(text.text)
+
+			# See also
+			if seealso!=None:
+				links = linkmatch.findall(seealso.group(0))
+				for l in links:
+					related.append(l[1].encode('ascii','ignore'))
+
+			# grab first 10 links in the text
+			links = linkmatch.findall(text.text)
+			count = 0
+			for l in links:
+				tmp = l[1].encode('ascii','ignore') 
+				# disgard repetitive words or special word
+				if tmp not in related and ':' not in tmp:
+					related.append(l[1].encode('ascii','ignore'))
+					count+=1
+				if count==10:
+					break
+	
+			'''
+			external = externalmatch.search(text.text)
+			# Category
+			if external!=None:
+				links = linkmatch.findall(external.group(0))
+				for l in links:
+					if re.match("Category:", l[1])!=None:
+						category.append(l[1].encode('ascii','ignore')[9:])
+			external=None
+			'''
+
+		for f in related:
+			# Adding friendship 
+			keyword_befriend(title,f)
+			
+		# tmp output
+		# print title, related
+
 	elem.clear()
 
-print len(title_set)
 print "Done updating dB"
 
 

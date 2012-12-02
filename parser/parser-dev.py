@@ -7,13 +7,12 @@ import re
 import sys
 
 # function for inserting keyword
-def sql_insert(keyword):
+def insert_keyword(keyword):
 	insert_keyword = 'INSERT INTO "keywords" ("created_at", "name", "updated_at", "wiki_page") VALUES '
 	timestamp = time.mktime(datetime.now().timetuple()) # timestamp
 	sql = insert_keyword +'(%s, %s, %s, %s)' % (timestamp , '"'+keyword+'"', timestamp, '"randomepage"')
 	print sql
 	cur.execute(sql)
-
 
 
 filename='enwiki-latest-pages-articles.xml'
