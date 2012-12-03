@@ -4,6 +4,8 @@
 .node text {
     font: 20px helvetica;
     font-weight: bold;
+    background-color: white;
+    opacity:0.75;
 }
 
 line.link {
