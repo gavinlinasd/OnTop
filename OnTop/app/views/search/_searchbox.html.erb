@@ -1,6 +1,6 @@
-<form class="form-search">
-	<input type="text" id="keyword" name="keyword" placeholder="Enter a keyword...">
-    <button type="submit" class="btn btn-primary">Search</button>
+<form id="graph_search_box" class="form-search">
+	<input type="text" id="graph_search_text" name="keyword" placeholder="Enter a keyword...">
+    <button type="submit" class="btn btn-primary btn-small">Search</button>
 </form>
 
 <script>
@@ -17,7 +17,7 @@
 		// create ajax request
 		$.ajax({
 			
-			url: "<%= search_fetch_key_path %>",
+			url: "<%= fetch_key_path %>",
 			data: dataString,
 			dataType: "json",
 			success: function(data) { alert(data);}

@@ -25,7 +25,10 @@ class SearchController < ApplicationController
 	if @keyword==nil
 		@result = nil # Not found
 	else
-		@result = Keyword.find_by_name(@keyword.downcase)
+		@key = Keyword.find_by_name(@keyword.downcase)
+		@categories = []
+		@key.categories.each{ |k| @categories += [k.name] }
+		@result = {:name => @key.name, :display_name => @key.display_name, :categories => @categories}
 	end
 
 	# Return in the format of JSON object
@@ -55,10 +58,12 @@ class SearchController < ApplicationController
 			# parse into the right format
 			@friend_info = []
 			@friends.each do |f|
-				@friend_info += [{:name => f.name, :display_name => f.display_name, :categories => f.categories}]
+				@categories = []
+				f.categories.each{ |k| @categories += [k.name] }
+				@friend_info += [{:name => f.name, :display_name => f.display_name, :categories => @categories}]
 			end
 
-			@result = { :source => @keyword, :targets => @friend_info, :categories => @key.categories }
+			@result = { :source => @keyword, :targets => @friend_info }
 		end
 		@result_list += [@result]
 	end

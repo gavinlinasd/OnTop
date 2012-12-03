@@ -1,0 +1,31 @@
+<form id="graph_search_box" class="form-search">
+	<input type="text" id="graph_search_text" name="keyword" placeholder="Enter a keyword...">
+    <button type="submit" class="btn btn-primary">Search</button>
+</form>
+
+<script>
+
+// Javascript to make AJAX request
+
+	var form_name = "#search_box_form";
+
+	$(form_name).submit(function(e) {
+		// Cancel default form submission action
+		e.preventDefault();
+
+		var dataString = $(form_name).serialize();
+		// create ajax request
+		$.ajax({
+			
+			url: "<%= fetch_key_path %>",
+			data: dataString,
+			dataType: "json",
+			success: function(data) { alert(data);}
+
+		});
+
+
+	});
+
+</script>
+
