@@ -106,6 +106,36 @@ graph.prototype.createJSON = function(json, centerindex) {
     // add on click listeners
     node.on("click", function(d, i) {
         
+        // global event handle
+        var evt = d3.event;
+
+        // if the control key is held, open the wiki page
+        // otherwise, just add to search history
+        if(evt.ctrlKey) 
+        {
+
+        if (visited[d.keyword] != "searched") {
+            d3.select(this).classed("new", false);
+            d3.select(this).classed("visited", true);
+            visited[d.keyword] = "visited";
+        }
+
+            
+            openwiki(d.keyword);
+
+        }
+        else
+        {
+
+
+
+        }
+        
+        
+    });
+
+    node.on("dblclick", function(d, i) {
+
         if (visited[d.keyword] != "searched") {
             d3.select(this).classed("new", false);
             d3.select(this).classed("visited", true);
@@ -114,12 +144,6 @@ graph.prototype.createJSON = function(json, centerindex) {
 
         // refocus the graph
         self.refocus(d.keyword);
-
-    });
-
-    node.on("doubleclick", function(d, i) {
-
-        openwiki(d.keyword);
 
     });
 
@@ -141,6 +165,12 @@ graph.prototype.createJSON = function(json, centerindex) {
         return self.redraw(e.alpha, self);
 
     });
+
+}
+
+graph.prototype.changeConf = function(name, value) {
+
+    this.conf[name] = value;
 
 }
 
