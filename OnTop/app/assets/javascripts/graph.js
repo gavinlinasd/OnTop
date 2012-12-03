@@ -109,29 +109,33 @@ graph.prototype.createJSON = function(json, centerindex) {
         // global event handle
         var evt = d3.event;
 
-        // add to the search history
-        visitNode(d, this);
-        // add it to the search history
-        AddNewNodeToSearch(last_search, d.keyword);
+        // step up the node state
+        // if new, we simply marked it as visited
+        if (visited[d.keyword] == "new") {
+
+            // add to the search history
+            visitNode(d, this);
+            // add it to the search history
+            AddNewNodeToSearch(last_search, d.keyword);
+        }
+        else // otherwise, make it searched
+        {
+
+            searchNode(d, this);
+ 
+            // add it to the search history
+            AddNewSearch(d.keyword);
+            last_search = d.keyword;
+
+            // refocus the graph
+            self.refocus(d.keyword);
+
+        }
 
         // if the control key is held, open the wiki page
-        // otherwise, just add to search history
         if(evt.ctrlKey) 
             openwiki(d.keyword);
         
-    });
-
-    node.on("dblclick", function(d, i) {
-
-        searchNode(d, this);
- 
-        // add it to the search history
-        AddNewSearch(d.keyword);
-        last_search = d.keyword;
-
-        // refocus the graph
-        self.refocus(d.keyword);
-
     });
 
     // add the circle graphic to the node
