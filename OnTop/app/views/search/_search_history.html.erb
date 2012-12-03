@@ -102,17 +102,18 @@ function AddNodeDiv(search_name, node_name) {
 	var s_id = "search_history_id_"+s.id;
 	var n_id = s_id+"_node_"+s.node_list[node_name].id;
 
-	$("#"+s_id).append("<div id="+n_id+"></div>");
-	$("#"+n_id).text("--"+node_name)
-			   .attr('class', 'search_history_node_entry');
+	$("#"+s_id).append("<div id="+n_id+" style=\"font-weight: normal\"></div>");
+    $("#"+n_id).attr('class', 'search_history_node_entry');
+    $("#"+n_id).append("--> <a href=\"http://en.wikipedia.org/wiki/"+node_name.replace(" ","_")+"\" target=\"_blank\">"+node_name+"</a>");
+
 	
 }
 
 function AddSearchDiv(search_name) {
 	var s = history_arr[search_name];
 	$(content_div_name).append("<div id=search_history_id_"+s.id+" style=\"font-weight: bold\"></div>");
-	$("#search_history_id_"+s.id).text(search_name)
-								 .attr('class', 'search_history_entry');
+	$("#search_history_id_"+s.id).attr('class', 'search_history_entry');
+	$("#search_history_id_"+s.id).append("<a href=\"http://en.wikipedia.org/wiki/"+search_name.replace(" ","_")+"\" target=\"_blank\">"+search_name+"</a>");	 
 	
 }
 function ClearSearchHistory() {
