@@ -9,7 +9,7 @@
     $(document).ready(function() {
 
         var urlkey = getUrlParam("keyword");
-        if (urlkey) $("#graph_search_text").val(urlkey);
+        if (urlkey) $("#graph_search_text").val(urlkey.replace("+"," "));
 
     });
 

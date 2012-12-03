@@ -117,6 +117,30 @@ graph.prototype.createJSON = function(json, centerindex) {
             visitNode(d, this);
             // add it to the search history
             AddNewNodeToSearch(last_search, d.keyword);
+            
+            // upgrade the node to visited, if it's not searched
+            if (visited[center.keyword] !== "searched")
+                visited[center.keyword] = "visited";
+
+            link.classed("searched", function(d, i) {
+                return (visited[d.source.keyword] == "searched" && visited[d.target.keyword] == "searched");
+            })
+                .classed("visited", function(d, i) {
+                    if (visited[d.source.keyword] == "visited" && visited[d.target.keyword] == "visited")
+                        return true;
+                    if (visited[d.source.keyword] == "searched" && visited[d.target.keyword] == "visited")
+                        return true;
+                    if (visited[d.source.keyword] == "visited" && visited[d.target.keyword] == "searched")
+                        return true;
+                    return false;
+                    
+                })
+                .classed("new", function(d, i) {
+                    return (visited[d.source.keyword] == "new" || visited[d.target.keyword] == "new");
+                });
+
+            self.redraw(e.alpha, self);
+
         }
         else // otherwise, make it searched
         {
@@ -126,6 +150,26 @@ graph.prototype.createJSON = function(json, centerindex) {
             // add it to the search history
             AddNewSearch(d.keyword);
             last_search = d.keyword;
+
+            visited[d.keyword] = "searched";
+
+            link.classed("searched", function(d, i) {
+                return (visited[d.source.keyword] == "searched" && visited[d.target.keyword] == "searched");
+            })
+                .classed("visited", function(d, i) {
+                    if (visited[d.source.keyword] == "visited" && visited[d.target.keyword] == "visited")
+                        return true;
+                    if (visited[d.source.keyword] == "searched" && visited[d.target.keyword] == "visited")
+                        return true;
+                    if (visited[d.source.keyword] == "visited" && visited[d.target.keyword] == "searched")
+                        return true;
+                    return false;
+                    
+                })
+                .classed("new", function(d, i) {
+                    return (visited[d.source.keyword] == "new" || visited[d.target.keyword] == "new");
+                });
+
 
             // refocus the graph
             self.refocus(d.keyword);
@@ -393,10 +437,6 @@ graph.prototype.refocus = function(keyword) {
     // assign a new center node
     center = this.hash[keyword];
     
-    // upgrade the node to visited, if it's fresh
-    if (visited[center.keyword] !== "searched")
-        visited[center.keyword] = "visited";
-
     // we want to maintain the position of any previous nodes, so leave the hash intact
     // update the graph
     this.asyncUpdate(center);

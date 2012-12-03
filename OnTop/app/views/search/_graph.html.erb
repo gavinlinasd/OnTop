@@ -28,13 +28,7 @@ def.branchfactor = 5;
 $(document).ready(function () {
   
     // attempt to load old variables from local web storage
-    //if () {
-
-      //  visited = localStorage.visited;
-
-
-    //}
-
+    // this includes the visited history and the last search
 
     graphhandle = document.getElementById("graph");
     
@@ -47,7 +41,7 @@ $(document).ready(function () {
 
     // check for a keyword in the url, if it's there, load graph based on that
     var urlkey = getUrlParam("keyword");
-    if (urlkey) g.seed(urlkey);
+    if (urlkey) g.seed(urlkey.replace("+", " "));
   
 });
 
