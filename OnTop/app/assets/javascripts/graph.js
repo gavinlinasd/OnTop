@@ -7,8 +7,8 @@
 var layout;
 var anchor;
 var center;
-var link;
-var node;
+var link = null;
+var node = null;
 var svg;
 var info;
 
@@ -54,6 +54,12 @@ graph.prototype.createJSON = function(json, centerindex) {
 
     var self = this;
 
+    // remove old elements
+    //svg.selectAll("line.link").remove();
+    //svg.selectAll("g.node").remove();
+    if (link) link.remove();
+    if (node) node.remove();
+
     // start the force simulation
     layout.nodes(json.nodes)
         .links(json.links)
@@ -62,45 +68,46 @@ graph.prototype.createJSON = function(json, centerindex) {
     link = svg.selectAll("line.link")
         .data(json.links)
         .enter().append("line")
-        .attr("class", "link")
-        .attr("class", function(d) {
-
-            if (visited[d.source.keyword] == "searched") {
-
-                if (visited[d.target.keyword] == "searched")
-                    return "searched";
-                else if (visited[d.target.keyword] == "visited")
-                    return "visited";
-                
-
-            } else if (visited[d.source.keyword] == "visited") {
-
-                if (visited[d.target.keyword] == "searched")
-                    return "visited";
-                else if (visited[d.target.keyword] == "visited")
-                    return "visited";
-                               
-            }
-
-            return "new";
-
+        .classed("link", true)
+        .classed("searched", function(d, i) {
+            return (visited[d.source.keyword] == "searched" && visited[d.target.keyword] == "searched");
+        })
+        .classed("visited", function(d, i) {
+            if (visited[d.source.keyword] == "visited" && visited[d.target.keyword] == "visited")
+                return true;
+            if (visited[d.source.keyword] == "searched" && visited[d.target.keyword] == "visited")
+                return true;
+            if (visited[d.source.keyword] == "visited" && visited[d.target.keyword] == "searched")
+                return true;
+            return false;
+               
+        })
+        .classed("new", function(d, i) {
+            return (visited[d.source.keyword] == "new" || visited[d.target.keyword] == "new");
         });
 
-    node = svg.selectAll("circle.node")
+    // get rid of all previous nodes
+    node = svg.selectAll("g.node")
         .data(json.nodes)
         .enter().append("g")
-        .attr("class", function(d) {
+        .classed("node", true)
+        .classed("searched", function(d, i) {
+            return (visited[d.keyword] == "searched");
+        })
+        .classed("visited", function(d, i) {
+            return (visited[d.keyword] == "visited");
+        })
+        .classed("new", function(d, i) {
+            return (visited[d.keyword] == "new");
+        })
 
-            // look to the visited hash
-            return visited[d.keyword];
-
-        });
 
     // add on click listeners
     node.on("click", function(d, i) {
         
         if (visited[d.keyword] != "searched") {
-            d3.select(this).attr("class", "visited");
+            d3.select(this).classed("new", false);
+            d3.select(this).classed("visited", true);
             visited[d.keyword] = "visited";
         }
 
@@ -127,13 +134,6 @@ graph.prototype.createJSON = function(json, centerindex) {
 
     });
 
-    // finally, make sure the graph is visible
-    // make sure that the graph is visible
-    //$("#graph").show("slow", function showNext() {
-    //    $(this).next().show("fast", showNext);
-    //});
-
-
 }
 
 // redraw function for the graph
@@ -154,10 +154,6 @@ graph.prototype.redraw = function(k) {
 
 
 }
-
-// 
-
-
 
 // build the graph using ajax requests
 // recursive call back function
@@ -231,8 +227,6 @@ graph.prototype.asyncUpdateHelper = function(oldhash, self, partial) {
             var key = set.source;
             var targets = set.targets;
 
-            console.log(key);
-
             // pointer to the source node
             var snode = self.hash[key];
               
@@ -270,6 +264,8 @@ graph.prototype.asyncUpdateHelper = function(oldhash, self, partial) {
 
                     // since the node's new, add it to the query
                     nextkeys.push(target.name);
+                    partial.nodes.push(tnode);
+                    self.hash[tnode.keyword] = tnode;
 
 
                 }
@@ -291,13 +287,14 @@ graph.prototype.asyncUpdateHelper = function(oldhash, self, partial) {
                         visited[tnode.keyword] = "new";
                     
                     // save the node and add pointers to the appropriate spots
-                    self.hash[tnode.keyword] = tnode;
                     nextkeys.push(tnode.keyword);
                     partial.nodes.push(tnode);
+                    self.hash[tnode.keyword] = tnode;
 
                 }
 
-                // if we've made it this far, other points to a valid node 
+
+                // if we've made it this far, target points to a valid node 
                 // add a link to the partial graph
                 var link = new Object();
                 link.source = snode;
