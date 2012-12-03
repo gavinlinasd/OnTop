@@ -10,13 +10,23 @@
 </ul>
 		 
 <div class="tab-content">
-	<div class="tab-pane active" id="history">
+    <div class="tab-pane active" id="history">
+      <button class="btn" type="button" onclick="$('#history_content_div').empty();">Clear History</button>
+      <hr>
 		<div id="history_content_div">
 		</div>
 
 	</div>
-
-	<div class="tab-pane" id="settings">...</div>
+    
+    <div class="tab-pane" id="settings">
+      <div>Number of Displayed Nodes</div>
+      <div class="btn-group" data-toggle="buttons-radio">
+        <button type="button" class="btn btn-primary" onclick="g.changeConf('branchfactor', 2)">3</button>
+        <button type="button" class="btn btn-primary" onclick="g.changeConf('branchfactor', 4)">5</button>
+        <button type="button" class="btn btn-primary" onclick="g.changeConf('branchfactor', 9)">10</button>
+        <button type="button" class="btn btn-primary" onclick="g.changeConf('branchfactor', 19)">20</button>
+      </div>
+    </div>
 </div>
 				  
 <script>
