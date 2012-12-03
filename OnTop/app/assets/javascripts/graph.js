@@ -101,8 +101,7 @@ graph.prototype.createJSON = function(json, centerindex) {
         })
         .classed("new", function(d, i) {
             return (visited[d.keyword] == "new");
-        })
-
+        });
 
     // add on click listeners
     node.on("click", function(d, i) {
@@ -134,7 +133,8 @@ graph.prototype.createJSON = function(json, centerindex) {
         .text(function(d) { return d.display_name });
 
     center = node[0][centerindex];
-    
+    center.fixed = true;
+
     // define our tick function
     layout.on("tick", function(e) {
 
@@ -150,8 +150,10 @@ graph.prototype.redraw = function(k, self) {
     var width = self.conf.width;
     var height = self.conf.height;
 
-    center.x += (anchor.x - center.x)*k;
-    center.y += (anchor.y - center.y)*k;
+    center.px += (anchor.x - center.px)*0.3;
+    center.x = center.px;
+    center.py += (anchor.y - center.py)*0.3;
+    center.y = center.py;
 
     // move all the graphical elements
     link.attr("x1", function(d) { return d.source.x; })
@@ -193,7 +195,8 @@ graph.prototype.asyncUpdate = function(root) {
     partial.links = new Array();
 
     root.cost = 0;
-    
+    root.fixed = true;
+
     this.hash[root.keyword] = root;
 
     // add the root node to the nodes list
@@ -241,6 +244,13 @@ graph.prototype.asyncUpdateHelper = function(oldhash, self, partial) {
 
             // pointer to the source node
             var snode = self.hash[key];
+
+            // the cost to get to the target from the source
+            var cost = snode.cost + 1;
+
+            // if the cost is too high, skip all children regardless
+            if (cost > self.conf.removeThresh)
+                break;
               
             // target refers to the normalized keyword name
             var numtargets = targets.length;
@@ -254,8 +264,6 @@ graph.prototype.asyncUpdateHelper = function(oldhash, self, partial) {
 
                 // pointer to the source node
                 var tnode = null;
-                // the cost to get to the target from the source
-                var cost = snode.cost + 1;
                 
                 // check if the target node already exists
                 // if so, use that
@@ -273,20 +281,20 @@ graph.prototype.asyncUpdateHelper = function(oldhash, self, partial) {
                 else if (oldhash[target.name])
                 {
 
-                    tnode = oldhash[target.name];
-                 
                     // we don't care about the old cost
                     // if the new cost is over the remove threshold, don't add it back
                     // into the new graph
                     if (cost > self.conf.removeThresh)
                         continue;
 
+                    tnode = oldhash[target.name];
+                 
                     // update cost
-                    if (tnode.cost > cost)
-                        tnode.cost = cost;
-
+                    tnode.cost = cost;
+                    
                     // since the node's new, add it to the query
                     nextkeys.push(target.name);
+                    tnode.fixed = false;
                     partial.nodes.push(tnode);
                     self.hash[tnode.keyword] = tnode;
 
@@ -306,16 +314,16 @@ graph.prototype.asyncUpdateHelper = function(oldhash, self, partial) {
                     tnode.y = snode.y;
 
                     // distinguish between the different types of nodes
-                    if (visited[tnode] == null) 
+                    if (visited[tnode.keyword] == null) 
                         visited[tnode.keyword] = "new";
                     
                     // save the node and add pointers to the appropriate spots
                     nextkeys.push(tnode.keyword);
+                    tnode.fixed = false;
                     partial.nodes.push(tnode);
                     self.hash[tnode.keyword] = tnode;
 
                 }
-
 
                 // if we've made it this far, target points to a valid node 
                 // add a link to the partial graph
@@ -368,7 +376,7 @@ graph.prototype.refocus = function(keyword) {
     AddNewNodeToSearch(last_search, center.keyword);
 
     // upgrade the node to visited, if it's fresh
-    if (visited[center.keyword] != "searched")
+    if (visited[center.keyword] !== "searched")
         visited[center.keyword] = "visited";
 
     // we want to maintain the position of any previous nodes, so leave the hash intact
