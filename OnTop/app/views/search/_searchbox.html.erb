@@ -5,9 +5,17 @@
 
 <script>
 
-// Javascript to make AJAX request
+    // if there's a keyword in the url, make the box reflect that
+    $(document).ready(function() {
 
-	var form_name = "#search_box_form";
+        var urlkey = getUrlParam("keyword");
+        if (urlkey) $("#graph_search_text").val(urlkey);
+
+    });
+
+    // Javascript to make AJAX request
+
+    var form_name = "#search_box_form";
 
 	$(form_name).submit(function(e) {
 		// Cancel default form submission action

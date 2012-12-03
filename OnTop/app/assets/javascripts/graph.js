@@ -11,6 +11,7 @@ var link = null;
 var node = null;
 var svg;
 var info;
+var last_search;
 
 // visited is a global hash table for storing the long term state for nodes
 // either fresh, visited, or searched
@@ -40,6 +41,7 @@ function graph(config, container, controllerfunc) {
     info = svg.append("g")
         .attr("class", "tooltip")
         .attr("id", "infobox");
+    
 
     // add an anchor to float the graph towards
     anchor = new Object();
@@ -116,6 +118,12 @@ graph.prototype.createJSON = function(json, centerindex) {
 
     });
 
+    node.on("doubleclick", function(d, i) {
+
+        openwiki(d.keyword);
+
+    });
+
     // add the circle graphic to the node
     node.append("circle")
         .attr("r", this.conf.noderadius);
@@ -130,14 +138,17 @@ graph.prototype.createJSON = function(json, centerindex) {
     // define our tick function
     layout.on("tick", function(e) {
 
-        return self.redraw(e.alpha);
+        return self.redraw(e.alpha, self);
 
     });
 
 }
 
 // redraw function for the graph
-graph.prototype.redraw = function(k) {
+graph.prototype.redraw = function(k, self) {
+
+    var width = self.conf.width;
+    var height = self.conf.height;
 
     center.x += (anchor.x - center.x)*k;
     center.y += (anchor.y - center.y)*k;
@@ -148,10 +159,13 @@ graph.prototype.redraw = function(k) {
         .attr("x2", function(d) { return d.target.x; })
         .attr("y2", function(d) { return d.target.y; });
 
-
     node.attr("transform", function(d) { 
-        return "translate(" + d.x + "," + d.y + ")"; });
+        if (d.x > self.conf.width) d.x = self.conf.width;
+        if (d.x < 0) d.x = 0;
+        if (d.y > self.conf.height) d.y = self.conf.height;
+        if (d.y < 0) d.y = 0;
 
+        return "translate(" + d.x + "," + d.y + ")"; });
 
 }
 
@@ -187,8 +201,6 @@ graph.prototype.asyncUpdate = function(root) {
 
     // wrap the root node in an array and ask the server for related entries
     var nextkeys = new Array(root.keyword);
-
-    
 
     // make a recursive call to the helper function to build the graph
     $.ajax({
@@ -234,6 +246,10 @@ graph.prototype.asyncUpdateHelper = function(oldhash, self, partial) {
             var numtargets = targets.length;
             for (var t = 0; t < numtargets; t++) {
                 
+                // constraint the number of nodes we load for each source
+                if (t > self.conf.branchfactor)
+                    break;
+
                 var target = targets[t];
 
                 // pointer to the source node
@@ -258,6 +274,13 @@ graph.prototype.asyncUpdateHelper = function(oldhash, self, partial) {
                 {
 
                     tnode = oldhash[target.name];
+                 
+                    // we don't care about the old cost
+                    // if the new cost is over the remove threshold, don't add it back
+                    // into the new graph
+                    if (cost > self.conf.removeThresh)
+                        continue;
+
                     // update cost
                     if (tnode.cost > cost)
                         tnode.cost = cost;
@@ -341,6 +364,9 @@ graph.prototype.refocus = function(keyword) {
     // assign a new center node
     center = this.hash[keyword];
     
+    // we know that the node keyword is correct, add it to the search history
+    AddNewNodeToSearch(last_search, center.keyword);
+
     // upgrade the node to visited, if it's fresh
     if (visited[center.keyword] != "searched")
         visited[center.keyword] = "visited";
@@ -385,6 +411,11 @@ graph.prototype.asyncQueryHelper = function(self) {
             alert("Search query not found.");
             return;
         }
+
+        // this is where we KNOW that the query is valid
+        // add it to the search history
+        AddNewSearch(data.name);
+        last_search = data.name;
 
         // clear out the hash
         self.hash = new Object();
