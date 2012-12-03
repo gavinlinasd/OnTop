@@ -110,8 +110,8 @@ function AddNodeDiv(search_name, node_name) {
 
 function AddSearchDiv(search_name) {
 	var s = history_arr[search_name];
-	$(content_div_name).append("<div id=search_history_id_"+s.id+"></div>");
-	$("#search_history_id_"+s.id).text("<b>"+search_name+"</b>")
+	$(content_div_name).append("<div id=search_history_id_"+s.id+" style=\"font-weight: bold\"></div>");
+	$("#search_history_id_"+s.id).text(search_name)
 								 .attr('class', 'search_history_entry');
 	
 }
