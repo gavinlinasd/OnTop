@@ -109,38 +109,25 @@ graph.prototype.createJSON = function(json, centerindex) {
         // global event handle
         var evt = d3.event;
 
+        // add to the search history
+        visitNode(d, this);
+        // add it to the search history
+        AddNewNodeToSearch(last_search, d.keyword);
+
         // if the control key is held, open the wiki page
         // otherwise, just add to search history
         if(evt.ctrlKey) 
-        {
-
-        if (visited[d.keyword] != "searched") {
-            d3.select(this).classed("new", false);
-            d3.select(this).classed("visited", true);
-            visited[d.keyword] = "visited";
-        }
-
-            
             openwiki(d.keyword);
-
-        }
-        else
-        {
-
-
-
-        }
-        
         
     });
 
     node.on("dblclick", function(d, i) {
 
-        if (visited[d.keyword] != "searched") {
-            d3.select(this).classed("new", false);
-            d3.select(this).classed("visited", true);
-            visited[d.keyword] = "visited";
-        }
+        searchNode(d, this);
+ 
+        // add it to the search history
+        AddNewSearch(d.keyword);
+        last_search = d.keyword;
 
         // refocus the graph
         self.refocus(d.keyword);
@@ -402,9 +389,6 @@ graph.prototype.refocus = function(keyword) {
     // assign a new center node
     center = this.hash[keyword];
     
-    // we know that the node keyword is correct, add it to the search history
-    AddNewNodeToSearch(last_search, center.keyword);
-
     // upgrade the node to visited, if it's fresh
     if (visited[center.keyword] !== "searched")
         visited[center.keyword] = "visited";
@@ -478,6 +462,28 @@ graph.prototype.asyncQueryHelper = function(self) {
 
 
 }
+
+// function for marking a node as visited, if not searched
+function visitNode(node, element) {
+
+    if (visited[node.keyword] !== "searched") {
+        d3.select(element).classed("new", false);
+        d3.select(element).classed("visited", true);
+        visited[node.keyword] = "visited";
+    }
+   
+}
+
+// function for marking a node as searched
+function searchNode(node, element) {
+
+    d3.select(element).classed("new", false);
+    d3.select(element).classed("visited", false);
+    d3.select(element).classed("searched", true);
+    visited[node.keyword] = "searched";
+   
+}
+
 
 // function for opening a new Wikipedia webpage in the background
 function openwiki(keyword) {
