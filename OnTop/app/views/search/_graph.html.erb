@@ -1,5 +1,6 @@
 <% content_for :script do %>
 <%= javascript_include_tag "graph.js", :debug =>true %>
+<%= javascript_include_tag "util.js", :debug =>true %>
 <%= javascript_include_tag "d3.v2.js", :debug =>true %>
 <% end %>
 
@@ -58,10 +59,5 @@ $("#graph_search_box").submit(function(e) {
 
 
 });
-  
-function getUrlParam(key){
-	var result = new RegExp(key + "=([^&]*)", "i").exec(window.location.search); 
-	return result && decodeURIComponent(result[1]) || ""; 
-}
 
 </script>

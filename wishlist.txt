@@ -1,0 +1,23 @@
+A simple list of ideas for features to add to OnTop:
+
+-- FRONTEND --
+Critical
+* both web storage and cookies for persisent experience across multiple platforms
+* ability to view all nodes
+* prefetching 
+* multi-level node views
+* handle page resizing
+
+Extra
+* different types of nodes and links
+* extra information about nodes and links
+* adapt to seamlessly fit over any wiki
+
+-- BACK END --
+Critical
+* Switch from SQLite to NoSQL(?) and negative indexing
+
+-- PROCESSING UNIT --
+Critical
+* ACTUALLY PROCESS THE LINKS
+* find a feature space for keyword relationships?
